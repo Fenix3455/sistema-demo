@@ -17,15 +17,7 @@
 
   <style>
     body { font-family: Roboto, Arial, sans-serif; background: #f8f8f8; margin: 0; }
-    .top-bar { 
-      background: #292929; 
-      color: #fff; 
-      padding: 0 20px;
-      display: flex;
-      align-items: center;
-      height: 56px; /* Ajusta la altura para ambos */
-      border-bottom: 2px solid #393939;
-    }
+
     .top-bar img { height: 42px; vertical-align: middle; }
     #menuLateral {
       display: none;
@@ -83,7 +75,14 @@
     header { padding: 8px 12px; background:#f0f0f0; border-bottom:1px solid #ccc; }
     header button { margin-right: 6px; padding: 6px 10px; font-size: 14px; }
     #container { flex:1; display:flex; }
-    #panel { width: 260px; border-right:1px solid #ccc; overflow-y:auto; padding:10px; }
+    #panel {
+      width: 260px;
+      border-right: 1px solid #222;
+      overflow-y: auto;
+      padding: 10px;
+      background: #181818;   /* Fondo negro */
+      color: #fff;           /* Texto blanco */
+    }
     #panel h3 { margin-top: 0; }
     #panel ul { list-style:none; padding:0; }
     #panel li { padding:4px 2px; cursor:pointer; border-bottom:1px dotted #ddd; }
@@ -310,15 +309,14 @@
 }
 
 .top-bar {
-  background: #292929;
+  background: #181818;
   color: #fff;
   padding: 0 20px;
   display: flex;
   align-items: center;
   height: 56px;
   border-bottom: 2px solid #393939;
-  /* Elimina cualquier justify-content: center; */
-  justify-content: flex-start; /* <-- Esto alinea todo a la izquierda */
+  justify-content: flex-start;
 }
 .menu-icon {
   width: 28px;
@@ -327,7 +325,7 @@
   display: block;
 }
 #menuBtn {
-  background: #f37018;
+  background: #d66215;
   border: none;
   border-radius: 6px;
   width: 40px;
@@ -633,7 +631,7 @@
   const map = L.map('map', {
     center: [-11.070093, -77.600411],
     zoom: 14,
-    layers: [osm]
+    layers: [esri]
   });
 
   map.zoomControl.setPosition('bottomright');
