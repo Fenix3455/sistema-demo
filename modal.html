@@ -1,0 +1,965 @@
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestión de Conexiones</title>
+  <link rel="icon" type="image/svg+xml" href="img/icono_datpon.svg">
+  <style>
+    .linea-animada {
+        stroke-dasharray: 10;
+        stroke-dashoffset: 0;
+        animation: dashMove 1s linear infinite;
+    }
+
+    @keyframes dashMove {
+        to {
+        stroke-dashoffset: -20;
+        }
+    }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      background: #ddd;
+      font-family: sans-serif;
+      min-height: 100vh;
+      max-height: 300vh;
+      height: 300vh;         /* <-- Fuerza el body a 3 pantallas */
+      overflow-y: auto;
+    }
+
+    /* CABECERA DE CONTROLES */
+    .cabecera {
+      display: flex;
+      justify-content:  flex-start;
+      align-items: center;
+      background: #eee;
+      padding: 8px 12px;
+      border: 2px solid #ccc;
+    }
+
+    .botones-izquierda  {
+      display: flex;
+      gap: 6px;
+    }
+
+.botones-derecha {
+  display: flex;
+  margin-left: 62%; /* Aumenta o disminuye este valor para mover el botón */
+   /* Ajusta este valor para mover el botón a la izquierda */
+}
+
+    .cabecera button {
+      background: #00a3cf;
+      border: none;
+      color: black;
+      padding: 6px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 3px;
+    }
+
+    .cabecera button:hover {
+      background: #0093b3;
+    }
+
+    .cabecera button span {
+      font-size: 14px;
+    }
+
+    /* BARRA SUPERIOR */
+    .barra-superior {
+      background-color: #00a3cf;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 8px;
+    }
+
+    .cerrar-x {
+      background: #ff5c5c;
+      border-radius: 3px;
+      color: white;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .cerrar-x:hover {
+      background: #e04040;
+    }
+
+    /* CONEXIONES Y BLOQUES */
+    svg#conexiones {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100%; /* Cambia de 100vh a 100% */
+      z-index: 0;
+      pointer-events: none; /* <--- ESTA LÍNEA SOLUCIONA TU PROBLEMA */
+    }
+
+    .bloque-container {
+      position: absolute;
+      padding: 5px;
+      background: transparent;
+      z-index: 10;
+    }
+
+    .bloque-header {
+      background: #333;
+      color: white;
+      padding: 2px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bloque-header input {
+      border: none;
+      background: transparent;
+      color: white;
+      width: 80px;
+      font-weight: bold;
+    }
+
+    .bloque-buttons {
+      display: flex;
+      gap: 4px;
+    }
+
+    .bloque-buttons button {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .bloque-body {
+      position: relative;
+      transition: transform 0.3s ease;
+    }
+
+    .bloque-body.flipped {
+      transform: scaleX(-1);
+    }
+
+    .puerto-btn {
+      font-size: 11px;
+      background: #444;
+      color: white;
+      width: 28px;
+      height: 28px;
+      text-align: center;
+      line-height: 28px;
+      border-radius: 10px 8px 10px 8px; /* esquinas suavemente redondeadas */
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      position: absolute;
+    }
+
+
+    .puerto-btn:hover {
+      background: #00bfff;
+    }
+
+    .puertos-fibra {
+      position: absolute;
+      top: 26px; /* 🔁 puedes ajustar este valor */
+      right: 37px; /* 🔁 posición hacia la derecha de la imagen */
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Estilos automáticos para fibras del 01 al 24 */
+    :root {
+      --altura-espaciado: 30px;
+    }
+
+    .fibra-01 { top: calc(0 * var(--altura-espaciado)); background-color: blue !important; }
+    .fibra-02 { top: calc(1 * var(--altura-espaciado)); background-color: orange !important; }
+    .fibra-03 { top: calc(2 * var(--altura-espaciado)); background-color: green !important; }
+    .fibra-04 { top: calc(3 * var(--altura-espaciado)); background-color: brown !important; }
+    .fibra-05 { top: calc(4 * var(--altura-espaciado)); background-color: red !important; }
+    .fibra-06 { top: calc(5 * var(--altura-espaciado)); background-color: violet !important; }
+    .fibra-07 { top: calc(6 * var(--altura-espaciado)); background-color: gray !important; }
+    .fibra-08 { top: calc(7 * var(--altura-espaciado)); background-color: pink !important; }
+    .fibra-09 { top: calc(8 * var(--altura-espaciado)); background-color: cyan !important; }
+    .fibra-10 { top: calc(9 * var(--altura-espaciado)); background-color: lime !important; }
+    .fibra-11 { top: calc(10 * var(--altura-espaciado)); background-color: gold !important; }
+    .fibra-12 { top: calc(11 * var(--altura-espaciado)); background-color: white !important; }
+    .fibra-13 { top: calc(12 * var(--altura-espaciado)); background-color: darkblue !important; }
+    .fibra-14 { top: calc(13 * var(--altura-espaciado)); background-color: darkorange !important; }
+    .fibra-15 { top: calc(14 * var(--altura-espaciado)); background-color: darkgreen !important; }
+    .fibra-16 { top: calc(15 * var(--altura-espaciado)); background-color: chocolate !important; }
+    .fibra-17 { top: calc(16 * var(--altura-espaciado)); background-color: darkred !important; }
+    .fibra-18 { top: calc(17 * var(--altura-espaciado)); background-color: purple !important; }
+    .fibra-19 { top: calc(18 * var(--altura-espaciado)); background-color: dimgray !important; }
+    .fibra-20 { top: calc(19 * var(--altura-espaciado)); background-color: hotpink !important; }
+    .fibra-21 { top: calc(20 * var(--altura-espaciado)); background-color: turquoise !important; }
+    .fibra-22 { top: calc(21 * var(--altura-espaciado)); background-color: chartreuse !important; }
+    .fibra-23 { top: calc(22 * var(--altura-espaciado)); background-color: khaki !important; }
+    .fibra-24 { top: calc(23 * var(--altura-espaciado)); background-color: ghostwhite !important; }
+
+
+    .bloque-body.flipped .puerto-btn {
+      transform: scaleX(-1);
+    }
+
+    .fibra-container {
+      width: 220px;
+      left: 50px;
+      top: 130px;
+    }
+
+    .fibra-img {
+      width: 100%;        /* mantiene el ancho natural */
+      height: auto;       /* se adapta a la altura del contenedor */
+
+    }
+
+    .splitter-container {
+      width: 220px;
+
+    }
+
+    .splitter-img {
+      width: 115%;
+      margin-top: 3%;
+    }
+
+    .splitter-IN {
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: green;
+    }
+
+    .splitter-OUT {
+      right: -45px;
+      background: #05a7dd;
+      margin-top: 7%;
+      
+    }
+
+    .splitter-01 { top: 0px; }
+    .splitter-02 { top: 30px; }
+    .splitter-03 { top: 60px; }
+    .splitter-04 { top: 90px; }
+    .splitter-05 { top: 120px; }
+    .splitter-06 { top: 150px; }
+    .splitter-07 { top: 180px; }
+    .splitter-08 { top: 210px; }
+
+    svg path  {
+      pointer-events: stroke; /* activa eventos solo sobre el trazo */
+      cursor: pointer;
+      stroke-width: 6; /* ← más grueso */
+    }
+
+    #canvas-area {
+      position: relative;
+      min-width: 100vw;
+      min-height: 100vh;
+      max-height: 300vh;
+      height: 300vh;         /* <-- Fuerza el área a 3 pantallas */
+      overflow: hidden;
+    }
+
+
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 140px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      z-index: 10;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 4px 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .dropdown-content button {
+      background: none;
+      border: none;
+      color: #222;
+      padding: 10px 18px;
+      text-align: left;
+      width: 100%;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      border-radius: 4px;
+    }
+
+    .dropdown-content button:hover {
+      background-color: #e3e8ee;
+      color: #0078d4;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+  </style>
+
+</head>
+
+<body>
+  <!-- Controles -->
+
+  <div class="cabecera">
+    <div class="botones-izquierda">
+      <button id="btn-splitter" title="Agregar Splitter x8">🔈</button>
+      <div class="dropdown">
+        <button id="btn-fibra" title="Agregar Fibra">
+          <img src="img/icono_fibra.png" alt="Agregar Fibra" style="width:22px; height:20px;">
+        </button>
+        <div class="dropdown-content">
+          <button onclick="agregarFibraX(4)">FIBRA X4</button>
+          <button onclick="agregarFibraX(6)">FIBRA X6</button>
+          <button onclick="agregarFibraX(12)">FIBRA X12</button>
+          <button onclick="agregarFibraX(24)">FIBRA X24</button>
+
+        </div>
+      </div>
+
+
+      <button id="btn-imprimir" title="Imprimir">🖨️</button>
+      <button id="btn-guardar" title="Guardar como Imagen">🖼️</button>
+      <button id="btn-retroceder" title="Retroceder">🔙</button>
+      <button id="btn-avanzar" title="Avanzar">🔜</button>
+      <button id="btn-limpiar" title="Limpiar conexiones">✂️</button>
+    </div>
+    <div class="botones-derecha">
+      <button id="btn-nuevo" title="Nuevo Diseño">Nuevo Diseño 📑</button>
+    </div>
+  </div>
+
+  <div id="canvas-area">
+  <!-- SVG para las conexiones -->
+  <svg id="conexiones" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;"></svg>
+  </div>
+  <script>
+    let conexiones = [];
+    let puertoSeleccionado = null;
+    let lineaTemporal = null;
+    let undoStack = [];  // pila para retroceder
+    let redoStack = [];  // pila para avanzar
+
+
+    let idCounter = 0;
+
+    function generarID() {
+      return "bloque_" + idCounter++;
+    }
+
+    function getCentro(el) {
+      const rect = el.getBoundingClientRect();
+      const svgRect = document.getElementById("conexiones").getBoundingClientRect();
+      return {
+        x: rect.left - svgRect.left + rect.width / 2,
+        y: rect.top - svgRect.top + rect.height / 2
+      };
+    }
+
+
+    function getColorLinea(puerto) {
+      if (puerto.classList.contains("fibra-01")) return "blue";
+      if (puerto.classList.contains("fibra-02")) return "orange";
+      if (puerto.classList.contains("fibra-03")) return "green";
+      if (puerto.classList.contains("fibra-04")) return "brown";
+      return "gray";
+    }
+    function generarPathCurvo(x1, y1, x2, y2) {
+    // Si el punto de inicio está a la derecha del destino, intercambiamos
+    if (x1 > x2) {
+        [x1, x2] = [x2, x1];
+        [y1, y2] = [y2, y1];
+    }
+
+    const dx = Math.abs(x2 - x1) * 0.5;
+    const cx1 = x1 + dx;
+    const cx2 = x2 - dx;
+    return `M ${x1},${y1} C ${cx1},${y1} ${cx2},${y2} ${x2},${y2}`;
+    }
+
+
+    function actualizarLineas() {
+      conexiones.forEach(({ origen, destino, linea }) => {
+        const { x: x1, y: y1 } = getCentro(origen);
+        const { x: x2, y: y2 } = getCentro(destino);
+        const d = generarPathCurvo(x1, y1, x2, y2);
+        linea.setAttribute("d", d);
+      });
+    }
+
+
+
+    function eliminarConexion(conexion) {
+      conexion.linea.classList.remove("linea-animada");
+
+      conexion.linea.remove();
+      [conexion.origen, conexion.destino].forEach(p => {
+        p.disabled = false;
+        p.style.opacity = 1;
+        p.style.cursor = "pointer";
+      });
+      conexiones = conexiones.filter(c => c !== conexion);
+      undoStack.push({ action: "eliminar", conexion });
+      redoStack = []; // limpiamos el redo stack
+      saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+
+    }
+    function retroceder() {
+      if (undoStack.length > 0) {
+        const accion = undoStack.pop();
+
+        if (accion.action === "conectar") {
+          const { conexion } = accion;
+          conexion.linea.remove();
+          conexion.origen.disabled = false;
+          conexion.origen.style.opacity = 1;
+          conexion.origen.style.cursor = "pointer";
+          conexion.destino.disabled = false;
+          conexion.destino.style.opacity = 1;
+          conexion.destino.style.cursor = "pointer";
+          conexiones = conexiones.filter(c => c !== conexion);
+        }
+
+        if (accion.action === "eliminar") {
+          const { conexion } = accion;
+          document.getElementById("conexiones").appendChild(conexion.linea);
+          conexion.linea.classList.add("linea-animada");
+
+          conexion.origen.disabled = true;
+          conexion.origen.style.opacity = 0.5;
+          conexion.origen.style.cursor = "not-allowed";
+          conexion.destino.disabled = true;
+          conexion.destino.style.opacity = 0.5;
+          conexion.destino.style.cursor = "not-allowed";
+          conexiones.push(conexion);
+        }
+
+        redoStack.push(accion);
+      }
+    }
+    function avanzar() {
+      if (redoStack.length > 0) {
+        const accion = redoStack.pop();
+
+        if (accion.action === "conectar") {
+          const { conexion } = accion;
+          document.getElementById("conexiones").appendChild(conexion.linea);
+          conexion.linea.classList.add("linea-animada");
+
+          conexion.origen.disabled = true;
+          conexion.origen.style.opacity = 0.5;
+          conexion.origen.style.cursor = "not-allowed";
+          conexion.destino.disabled = true;
+          conexion.destino.style.opacity = 0.5;
+          conexion.destino.style.cursor = "not-allowed";
+          conexiones.push(conexion);
+        }
+
+        if (accion.action === "eliminar") {
+          const { conexion } = accion;
+          conexion.linea.remove();
+          conexion.origen.disabled = false;
+          conexion.origen.style.opacity = 1;
+          conexion.origen.style.cursor = "pointer";
+          conexion.destino.disabled = false;
+          conexion.destino.style.opacity = 1;
+          conexion.destino.style.cursor = "pointer";
+          conexiones = conexiones.filter(c => c !== conexion);
+        }
+
+        undoStack.push(accion);
+      }
+    }
+
+    function moverLinea(e) {
+      if (!puertoSeleccionado || !lineaTemporal) return;
+      const { x, y } = getCentro(puertoSeleccionado);
+
+      const svg = document.getElementById("conexiones");
+      const svgRect = svg.getBoundingClientRect();
+      const x2 = e.clientX - svgRect.left;
+      const y2 = e.clientY - svgRect.top;
+
+      const d = generarPathCurvo(x, y, x2, y2);
+      lineaTemporal.setAttribute("d", d);
+    }
+
+
+    function conectarPuerto(e) {
+      const destino = e.target;
+      if (!puertoSeleccionado) {
+        if (destino.disabled) return;
+        puertoSeleccionado = destino;
+        puertoSeleccionado.classList.add("seleccionado");
+
+        lineaTemporal = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        lineaTemporal.setAttribute("fill", "none");
+        lineaTemporal.setAttribute("stroke", "gray");
+        lineaTemporal.setAttribute("stroke-width", 4);
+        lineaTemporal.setAttribute("pointer-events", "stroke");
+        lineaTemporal.setAttribute("cursor", "pointer");
+        document.getElementById("conexiones").appendChild(lineaTemporal);
+        document.addEventListener("mousemove", moverLinea);
+      } else {
+        if (puertoSeleccionado === destino) {
+          puertoSeleccionado.classList.remove("seleccionado");
+          puertoSeleccionado = null;
+          return;
+        }
+
+        const bloqueOrigen = puertoSeleccionado.closest(".bloque-container");
+        const bloqueDestino = destino.closest(".bloque-container");
+
+        if (
+          bloqueOrigen === bloqueDestino &&
+          puertoSeleccionado.classList.contains("splitter-OUT") &&
+          destino.classList.contains("splitter-OUT")
+        ) {
+          alert("No se puede conectar OUT con OUT del mismo splitter.");
+          puertoSeleccionado.classList.remove("seleccionado");
+          puertoSeleccionado = null;
+          return;
+        }
+
+        const { x: x1, y: y1 } = getCentro(puertoSeleccionado);
+        const { x: x2, y: y2 } = getCentro(destino);
+        const d = generarPathCurvo(x1, y1, x2, y2);
+        lineaTemporal.setAttribute("d", d);
+
+        // 💡 Nuevo: tomar color del puerto que sea de fibra (inicio o destino)
+        const puertoFibra = [puertoSeleccionado, destino].find(p =>
+          p.classList.contains("fibra-01") ||
+          p.classList.contains("fibra-02") ||
+          p.classList.contains("fibra-03") ||
+          p.classList.contains("fibra-04")
+        );
+        const color = getColorLinea(puertoFibra || puertoSeleccionado); // fallback por si no hay fibra
+        lineaTemporal.setAttribute("stroke", color);
+        lineaTemporal.classList.add("linea-animada");
+
+
+
+        puertoSeleccionado.disabled = true;
+        puertoSeleccionado.style.opacity = 0.5;
+        puertoSeleccionado.style.cursor = "not-allowed";
+
+        destino.disabled = true;
+        destino.style.opacity = 0.5;
+        destino.style.cursor = "not-allowed";
+
+        const nuevaConexion = {
+          origen: puertoSeleccionado,
+          destino: destino,
+          linea: lineaTemporal
+        };
+        lineaTemporal.addEventListener("dblclick", () => eliminarConexion(nuevaConexion));
+        conexiones.push(nuevaConexion);
+        undoStack.push({ action: "conectar", conexion: nuevaConexion });
+        redoStack = []; // limpiamos el redo stack al hacer nueva acción
+        saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+
+
+        document.removeEventListener("mousemove", moverLinea);
+        lineaTemporal = null;
+        puertoSeleccionado.classList.remove("seleccionado");
+        puertoSeleccionado = null;
+      }
+    }
+
+    // ESC cancela conexión en curso
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && lineaTemporal) {
+        lineaTemporal.remove();
+        lineaTemporal = null;
+        if (puertoSeleccionado) puertoSeleccionado.classList.remove("seleccionado");
+        puertoSeleccionado = null;
+        document.removeEventListener("mousemove", moverLinea);
+      }
+    });
+
+    function habilitarMover(btnID, divID) {
+      const btn = document.getElementById(btnID);
+      const bloque = document.getElementById(divID);
+      if (!btn || !bloque) return;
+      let offsetX, offsetY, isDragging = false;
+
+      btn.addEventListener("mousedown", e => {
+        isDragging = true;
+        const rect = bloque.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        document.addEventListener("mousemove", mover);
+        document.addEventListener("mouseup", soltar);
+      });
+
+      function mover(e) {
+        if (!isDragging) return;
+
+        // Limites del área de trabajo
+        const area = document.getElementById("canvas-area");
+        const areaRect = area.getBoundingClientRect();
+        const bloqueRect = bloque.getBoundingClientRect();
+
+        // Calcula nueva posición
+        let newLeft = e.clientX - offsetX + window.scrollX;
+        let newTop = e.clientY - offsetY + window.scrollY;
+
+        // Limita horizontalmente
+        newLeft = Math.max(0, Math.min(newLeft, area.scrollWidth - bloqueRect.width));
+        // Limita verticalmente (máximo 3 pantallas)
+        const maxTop = area.scrollHeight - bloqueRect.height;
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+
+        bloque.style.left = newLeft + "px";
+        bloque.style.top = newTop + "px";
+        actualizarLineas();
+      }
+
+      function soltar() {
+        isDragging = false;
+        document.removeEventListener("mousemove", mover);
+        document.removeEventListener("mouseup", soltar);
+      }
+    }
+
+    function girarBloque(id) {
+      const bloque = document.getElementById(id);
+      if (bloque) {
+        const cuerpo = bloque.querySelector('.bloque-body');
+        cuerpo.classList.toggle('flipped');
+
+      }
+    }
+
+    function agregarSplitter() {
+      const id = generarID();
+      const div = document.createElement("div");
+      div.id = id;
+      div.className = "bloque-container splitter-container";
+      div.style.top = "150px";
+      div.style.left = "400px";
+      div.innerHTML = `
+        <div class="bloque-header">
+          <input type="text" value="SPLITTER" />
+          <div class="bloque-buttons">
+            <button onclick="girarBloque('${id}')">↔️</button>
+            <button id="mover${id}Btn">🤚</button>
+            <button onclick="eliminarBloque('${id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="bloque-body">
+          <img src="img/splitter.png" class="splitter-img" />
+          <button id="${id}_IN" class="puerto-btn puerto-conectable splitter-IN">IN</button>
+          ${[...Array(8)].map((_, i) => 
+            `<button id="${id}_OUT${i+1}" class="puerto-btn puerto-conectable splitter-OUT splitter-0${i+1}">${("0" + (i+1)).slice(-2)}</button>`
+          ).join("")}
+        </div>
+      `;
+      document.getElementById("canvas-area").appendChild(div);
+
+      habilitarMover(`mover${id}Btn`, id);
+      div.querySelectorAll(".puerto-conectable").forEach(btn => btn.addEventListener("click", conectarPuerto));
+    }
+
+  function agregarFibraX(cantidad) {
+    const id = generarID();
+    const div = document.createElement("div");
+    div.id = id;
+    div.className = "bloque-container fibra-container";
+    div.style.top = "150px";
+    div.style.left = "50px";
+
+    let imagen = "fibra_x4.png";
+    if (cantidad === 6) imagen = "fibra_x6.png";
+    else if (cantidad === 12) imagen = "fibra_x12.png";
+    else if (cantidad === 24) imagen = "fibra_x24.png";
+
+    let botones = '';
+    for (let i = 1; i <= cantidad; i++) {
+      const num = String(i).padStart(2, '0');
+      botones += `<button id="${id}_F${num}" class="puerto-btn puerto-conectable fibra-${num}">${num}</button>`;
+    }
+
+    let altura = 50 + cantidad * 35;
+
+    div.innerHTML = `
+      <div class="bloque-header">
+        <input type="text" value="FIBRA X${cantidad}" />
+        <div class="bloque-buttons">
+          <button onclick="girarBloque('${id}')">↔️</button>
+          <button id="mover${id}Btn">🤚</button>
+          <button onclick="eliminarBloque('${id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="bloque-body" style="height: ${altura}px;">
+        <img src="img/${imagen}" class="fibra-img" />
+        <div class="puertos-fibra">
+          ${botones}
+        </div>
+      </div>
+    `;
+
+    document.getElementById("canvas-area").appendChild(div);
+
+    habilitarMover(`mover${id}Btn`, id);
+    div.querySelectorAll(".puerto-conectable").forEach(btn =>
+      btn.addEventListener("click", conectarPuerto)
+    );
+  }
+
+
+
+    function eliminarBloque(id) {
+      const bloque = document.getElementById(id);
+      if (!bloque) return;
+      conexiones = conexiones.filter(c => {
+        if (bloque.contains(c.origen) || bloque.contains(c.destino)) {
+          c.linea.remove();
+          return false;
+        }
+        return true;
+      });
+      bloque.remove();
+      saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+    }
+
+    function limpiarConexiones() {
+      conexiones.forEach(c => c.linea.remove());
+      conexiones = [];
+      document.querySelectorAll(".puerto-conectable").forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = 1;
+        btn.style.cursor = "pointer";
+      });
+      saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+    }
+
+    function nuevoDiseno() {
+      limpiarConexiones();
+      document.querySelectorAll(".bloque-container").forEach(b => b.remove());
+      saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+    }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("btn-splitter").addEventListener("click", agregarSplitter);
+      document.getElementById("btn-fibra").addEventListener("click", function() {
+        const dropdown = document.querySelector(".dropdown-content");
+        dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";  // Muestra u oculta el dropdown
+      });
+
+      document.getElementById("btn-limpiar").addEventListener("click", limpiarConexiones);
+      document.getElementById("btn-nuevo").addEventListener("click", nuevoDiseno);
+      document.getElementById("btn-imprimir").addEventListener("click", () => {window.print();
+      });
+      document.getElementById("btn-retroceder").addEventListener("click", retroceder);
+      document.getElementById("btn-avanzar").addEventListener("click", avanzar);
+
+      // Obtener pointId de la URL
+      const params = new URLSearchParams(window.location.search);
+      pointId = params.get('pointId'); // <-- Asignar aquí
+      if (pointId) {
+        loadModalStateForPoint(pointId);
+      } else if (localStorage.getItem('modalBloques')) {
+        loadModalState();
+      }
+    });
+
+    function saveModalState() {
+  // Serializa los bloques y conexiones
+  const bloques = [];
+  document.querySelectorAll('.bloque-container').forEach(b => {
+    bloques.push({
+      id: b.id,
+      html: b.outerHTML,
+      // Puedes guardar más propiedades si lo necesitas
+    });
+  });
+  // Serializa conexiones (ejemplo simple)
+  const conexionesData = conexiones.map(c => ({
+    origenId: c.origen.id,
+    destinoId: c.destino.id,
+    // ...otros datos si necesitas...
+  }));
+  localStorage.setItem('modalBloques', JSON.stringify(bloques));
+  localStorage.setItem('modalConexiones', JSON.stringify(conexionesData));
+}
+
+function loadModalState() {
+  // Restaura bloques
+  const bloques = JSON.parse(localStorage.getItem('modalBloques') || '[]');
+  bloques.forEach(b => {
+    const temp = document.createElement('div');
+    temp.innerHTML = b.html;
+    document.getElementById('canvas-area').appendChild(temp.firstChild);
+  });
+  // Restaura conexiones (debes reconstruirlas usando los IDs)
+  // ...
+}
+// Llama a loadModalState() al cargar el modal
+// Llama a saveModalState() cada vez que cambie algo
+
+function saveModalStateForPoint(pointId) {
+  // Serializa los bloques y conexiones igual que saveModalState
+  const bloques = [];
+  document.querySelectorAll('.bloque-container').forEach(b => {
+    bloques.push({
+      id: b.id,
+      html: b.outerHTML,
+      top: b.style.top,    // <-- Guarda la posición
+      left: b.style.left   // <-- Guarda la posición
+    });
+  });
+  const conexionesData = conexiones.map(c => ({
+    origenId: c.origen.id,
+    destinoId: c.destino.id,
+  }));
+  localStorage.setItem('modalState_' + pointId, JSON.stringify({ bloques, conexiones: conexionesData }));
+}
+
+function loadModalStateForPoint(pointId) {
+  const data = JSON.parse(localStorage.getItem('modalState_' + pointId) || '{}');
+  if (!data.bloques) return;
+
+  document.getElementById('canvas-area').innerHTML = '<svg id="conexiones" style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;"></svg>';
+
+  // Restaura bloques
+  data.bloques.forEach(b => {
+    const temp = document.createElement('div');
+    temp.innerHTML = b.html;
+    const bloque = temp.firstChild;
+    if (b.top) bloque.style.top = b.top;
+    if (b.left) bloque.style.left = b.left;
+    document.getElementById('canvas-area').appendChild(bloque);
+
+    const moverBtn = bloque.querySelector(`[id^="mover"]`);
+    if (moverBtn) habilitarMover(moverBtn.id, bloque.id);
+    bloque.querySelectorAll(".puerto-conectable").forEach(btn =>
+      btn.addEventListener("click", conectarPuerto)
+    );
+  });
+
+  // Espera a que las imágenes estén listas antes de dibujar las líneas
+  waitForImagesLoaded(() => {
+    conexiones = [];
+    if (data.conexiones) {
+      data.conexiones.forEach(c => {
+        const origen = document.getElementById(c.origenId);
+        const destino = document.getElementById(c.destinoId);
+        if (origen && destino) {
+          origen.disabled = true;
+          origen.style.opacity = 0.5;
+          origen.style.cursor = "not-allowed";
+          destino.disabled = true;
+          destino.style.opacity = 0.5;
+          destino.style.cursor = "not-allowed";
+
+          const { x: x1, y: y1 } = getCentro(origen);
+          const { x: x2, y: y2 } = getCentro(destino);
+          const d = generarPathCurvo(x1, y1, x2, y2);
+
+          const linea = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          linea.setAttribute("fill", "none");
+          linea.setAttribute("stroke", getColorLinea(origen));
+          linea.setAttribute("stroke-width", 4);
+          linea.setAttribute("pointer-events", "stroke");
+          linea.setAttribute("cursor", "pointer");
+          linea.setAttribute("d", d);
+          linea.classList.add("linea-animada");
+          linea.addEventListener("dblclick", () => eliminarConexion({ origen, destino, linea }));
+
+          document.getElementById("conexiones").appendChild(linea);
+
+          conexiones.push({ origen, destino, linea });
+        }
+      });
+    }
+  });
+}
+
+// Espera a que todas las imágenes dentro de #canvas-area estén cargadas
+function waitForImagesLoaded(callback) {
+  const images = Array.from(document.querySelectorAll('#canvas-area img'));
+  let loaded = 0;
+  if (images.length === 0) {
+    callback();
+    return;
+  }
+  images.forEach(img => {
+    if (img.complete) {
+      loaded++;
+      if (loaded === images.length) callback();
+    } else {
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (loaded === images.length) callback();
+      };
+    }
+  });
+}
+document.getElementById("btn-guardar").addEventListener("click", () => {
+  const area = document.getElementById("canvas-area");
+
+  // Calcula el tamaño real del contenido
+  const rect = area.getBoundingClientRect();
+  const contentWidth = area.scrollWidth;
+  const contentHeight = area.scrollHeight;
+
+  // Crea un clon para no afectar el diseño original
+  const clone = area.cloneNode(true);
+  clone.style.width = contentWidth + "px";
+  clone.style.height = contentHeight + "px";
+  clone.style.background = "#fff";
+  clone.style.overflow = "hidden";
+  clone.style.position = "relative";
+
+  // Crea un contenedor oculto para renderizar el clon
+  const tempDiv = document.createElement("div");
+  tempDiv.style.position = "fixed";
+  tempDiv.style.left = "-9999px";
+  tempDiv.style.top = "0";
+  tempDiv.appendChild(clone);
+  document.body.appendChild(tempDiv);
+
+  html2canvas(clone, {
+    width: contentWidth,
+    height: contentHeight,
+    backgroundColor: "#fff"
+  }).then(canvas => {
+    // Descarga la imagen
+    const link = document.createElement("a");
+    link.download = "diseño_completo.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    // Limpia el DOM
+    document.body.removeChild(tempDiv);
+  });
+});
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+</body>
+
+</html>

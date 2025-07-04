@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>DATPON</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="icon" type="image/svg+xml" href="img/icono_datpon.svg">
+  <!-- MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  
+  <!-- Leaflet JS (primero) -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- MarkerCluster JS (después) -->
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+  <style>
+    body { font-family: Roboto, Arial, sans-serif; background: #f8f8f8; margin: 0; }
+    .top-bar { 
+      background: #292929; 
+      color: #fff; 
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      height: 56px; /* Ajusta la altura para ambos */
+      border-bottom: 2px solid #393939;
+    }
+    .top-bar img { height: 42px; vertical-align: middle; }
+    #menuLateral {
+      display: none;
+      position: absolute;
+      top: 48px;
+      left: 0;
+      background: #292929;
+      color: white;
+      min-width: 220px; /* Cambia aquí el ancho mínimo */
+      max-width: 300px; /* Opcional: ancho máximo */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      padding: 8px 0;
+      margin: 0;
+      z-index: 1000;
+    }
+    #menuLateral li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 10px 18px;
+      transition: background 0.2s;
+    }
+    #menuLateral li:hover {
+      background: #444;
+      color: #fff;
+    }
+    #menuLateral li:active {
+      background: #222;
+    }
+
+    .top-bar .tools-right button {
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .top-bar .tools-right .regla-btn {
+      background: #2196f3;
+      color: #fff;
+    }
+    .top-bar .tools-right .export-btn {
+      background: #4caf50;
+      color: #fff;
+    }
+    body { margin: 0; font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 8px 12px; background:#f0f0f0; border-bottom:1px solid #ccc; }
+    header button { margin-right: 6px; padding: 6px 10px; font-size: 14px; }
+    #container { flex:1; display:flex; }
+    #panel { width: 260px; border-right:1px solid #ccc; overflow-y:auto; padding:10px; }
+    #panel h3 { margin-top: 0; }
+    #panel ul { list-style:none; padding:0; }
+    #panel li { padding:4px 2px; cursor:pointer; border-bottom:1px dotted #ddd; }
+    #panel li:hover { background:#e7e7e7; }
+    #map { flex:1; }
+    .type-btn.active {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+      border: 1px solid #0056b3;
+    }
+    .regla-popup {
+      position: absolute;
+      bottom: 20px;
+      right: 50px;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      font-family: sans-serif;
+      z-index: 1000;
+      width: 250px;
+    }
+    /* Quitar el resaltado negro al seleccionar líneas SVG */
+    .leaflet-interactive:focus {
+      outline: none;
+    }
+
+    .regla-popup button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+
+    .regla-popup button:first-of-type {
+      background-color: #dc3545; /* Rojo */
+      color: white;
+    }
+
+    .regla-popup button:last-of-type {
+      background-color: #007bff; /* Azul */
+      color: white;
+    }
+/* Botones en popups de línea */
+.popup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: background 0.2s ease;
+  margin-top: 6px;
+}
+
+#map {
+  flex:1;
+  position: relative; /* <--- AÑADIR ESTO */
+}
+
+#editarPopup {
+  position: absolute;
+  bottom: 20px;
+  left: 22%;
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  font-family: sans-serif;
+  z-index: 1000;
+  width: 250px;
+}
+
+.popup-btn.edit {
+  background-color: #007bff;
+  color: white;
+}
+
+.popup-btn.delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.popup-btn:hover {
+  opacity: 0.85;
+}
+
+ #confirmarConexionPopup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    padding: 24px;
+    width: 450px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    z-index: 9999;
+    font-family: 'Segoe UI', sans-serif;
+    text-align: center;
+  }
+
+  #confirmarConexionPopup p {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  #confirmarConexionPopup button {
+    margin: 5px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  #btnConectar {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  #btnConectar:hover {
+    background-color: #45a045;
+  }
+
+  #btnConectarFinalizar {
+    background-color: #2196f3;
+    color: white;
+  }
+
+  #btnConectarFinalizar:hover {
+    background-color: #1e88e5;
+  }
+
+  #btnCancelarConexion {
+    background-color: #f44336;
+    color: white;
+  }
+
+  #btnCancelarConexion:hover {
+    background-color: #e53935;
+  }
+
+
+#miModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#miModalContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#closeModal {
+  font-size: 30px;  /* Tamaño de la "X" */
+  color: white;  /* "X" color blanco */
+  cursor: pointer;
+  position: fixed; /* Cambiar a 'fixed' para que se quede fijo */
+  top: 10px;  /* Ajuste para mover la "X" más arriba */
+  right: 10px;
+  z-index: 9999;
+
+  /* Cuadro con borde rojo y fondo rojo */
+  padding: 0px 10px;  /* Espacio alrededor de la "X" */
+  border: 1px solid rgb(248, 0, 0);  /* Borde rojo */
+  border-radius: 5px;  /* Bordes ligeramente redondeados */
+  background-color: rgb(248, 0, 0);  /* Fondo rojo */
+}
+
+#menuLateral {
+  display: none;
+  position: absolute;
+  top: 45px;
+  left: 0;
+  background: #292929;
+  color: white;
+  width: 200px; /* Cambia aquí el ancho mínimo del menu lista que aparece*/
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  padding: 8px 0;
+  margin: 0;
+  z-index: 1000;
+}        
+#menuLateral li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px 18px;
+  transition: background 0.2s;
+}
+#menuLateral li:hover {
+  background: #444;
+  color: #fff;
+}
+#menuLateral li:active {
+  background: #222;
+}
+
+.top-bar {
+  background: #292929;
+  color: #fff;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  border-bottom: 2px solid #393939;
+  /* Elimina cualquier justify-content: center; */
+  justify-content: flex-start; /* <-- Esto alinea todo a la izquierda */
+}
+.menu-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+}
+#menuBtn {
+  background: #f37018;
+  border: none;
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.menu-list-icon {
+  width: 28px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+#agregarCablePopup {
+  position: fixed !important;
+  z-index: 12000 !important;
+  width: 370px !important;
+  max-height: 50vh !important;
+  overflow-y: auto;
+  /* Elimina bottom y right */
+}
+
+/* Modal para editar cable */
+#editarCableModal {
+  display: none;
+  position: fixed;
+  z-index: 12001;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 370px;
+  max-width: 95vw;
+}
+
+#editarCableModal strong {
+  color: #388e3c;
+}
+
+#editarCableModal label {
+  display: block;
+  margin-top: 8px;
+}
+
+#editarCableModal input,
+#editarCableModal select {
+  width: 100%;
+  margin-top: 2px;
+}
+
+#editarCableModal button {
+  margin: 5px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#editarCableModal button:hover {
+  opacity: 0.9;
+}
+
+#editarCableModal .cancelar-btn {
+  background-color: #e53935;
+  color: white;
+}
+
+#editarCableModal .confirmar-btn {
+  background-color: #03a9f4;
+  color: white;
+}
+/* Parpadeo para el botón mover activo */
+.blink {
+  animation: blink-animation 0.8s steps(2, start) infinite;
+}
+@keyframes blink-animation {
+  to {
+    visibility: hidden;
+  }
+}
+.tools-right {
+  display: inline-flex;
+  gap: 10px;
+  margin-left: 44px; /* Ajusta este valor para separar los botones del menú */
+  vertical-align: middle;
+}
+.top-bar-actions {
+  margin-left: auto; /* Esto empuja todo lo que esté aquí a la derecha */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logout-btn {
+  background: #e53935;
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  margin-left: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.logout-btn:hover {
+  background: #b71c1c;
+}
+  </style>
+</head>
+<body>
+    <!-- Cabecera fija -->
+    <div class="top-bar">
+    <img src="img/logo.png" alt="Logo" style="height:42px;">
+      <div style="position:relative; display:inline-block; margin-left:18px;">
+        <button id="menuBtn">
+          <img src="img/menu_icono.svg" alt="Menú" class="menu-icon">
+        </button>
+        <ul id="menuLateral" style="display:none; position:absolute; top:48px; left:0; background:#292929; color:white; min-width:300px; box-shadow:0 2px 8px rgba(0,0,0,0.15); border-top-left-radius:0; border-top-right-radius:0; border-bottom-left-radius:8px; border-bottom-right-radius:8px; padding:8px 0; margin:0; z-index:1000;">
+          <li id="mapaItem" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 18px;">
+            <img src="img/menu_mapa.png" alt="Mapa" class="menu-list-icon">
+            <span>Mapa</span>
+          </li>
+
+
+          <li id="usuariosItem" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 18px;">
+            <img src="img/menu_usuario.png" alt="Usuarios" class="menu-list-icon">
+            <span>Usuarios</span>
+          </li>          
+          <li id="fibraItem" style="display:flex; align-items:center; gap:10px; cursor:pointer; padding:10px 18px;">
+            <img src="img/menu_fibra.png" alt="Tipos de cables"class="menu-list-icon">
+            <span>Tipos de cables</span>
+          </li>
+
+          <li id="coloresItem">
+            <img src="img/menu_colores.png" alt="Códigos de color" class="menu-list-icon">
+            <span>Códigos de color</span>
+          </li>
+        </ul>
+      </div>
+      <!-- Botones extra a la derecha -->
+      <div class="tools-right">
+        <button onclick="activarRegla()" class="regla-btn">Herramienta Regla</button>
+        <button id="agregarCableBtn" class="regla-btn" style="background:#43a047;">Agregar Cable</button>
+        <button id="exportKmlBtn" class="export-btn">Exportar KML</button>
+      </div>
+      <div class="top-bar-actions">
+        <button id="logoutBtn" class="logout-btn" title="Cerrar sesión">✖</button>
+        <!-- Aquí más botones a la derecha en el futuro -->
+      </div>
+    </div>
+
+
+  <div id="reglaPopup" style="display:none;" class="regla-popup">
+    <strong>Herramienta Regla</strong>
+    <p id="popupPuntos">Puntos seleccionados: 0 puntos</p>
+    <p id="popupDistancia">0 Distancia Total</p>
+    <hr>
+    <button onclick="borrarUltimoPunto()">Borrar último punto</button>
+    <button onclick="concluirMedicion()">Concluir</button>
+  </div>
+
+
+  <div id="container">
+    <div id="panel">
+      <h3>Puntos</h3>
+      <div>
+        <button class="type-btn" data-tipo="Caja" title="Caja">
+          <img src="img/caja.svg" alt="Caja" width="32" height="32">
+        </button>
+        <button class="type-btn" data-tipo="Mufa" title="Mufa">
+          <img src="img/mufa.svg" alt="Mufa" width="32" height="32">
+        </button>
+        <button class="type-btn" data-tipo="Oficina" title="Oficina">
+          <img src="img/oficina.svg" alt="Oficina" width="32" height="32">
+        </button>
+      </div>
+      <ul id="pointList"></ul>
+    </div>
+    <div id="map"></div>
+
+    <div id="editarPopup" class="regla-popup" style="display:none;">
+      <strong id="editarTitulo">Editar Elemento</strong>
+
+      <p><label>Nombre:<br><input type="text" id="editNombre" style="width:100%"></label></p>
+      <p><label>Tipo:<br><input type="text" id="editTipo" style="width:100%"></label></p>
+      <div style="text-align: right; margin-top: 10px;">
+        <button onclick="cancelarEdicion()" style="background:#6c757d; color:white;">Cancelar</button>
+        <button onclick="guardarEdicion()" style="background:#28a745; color:white;">Guardar</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal (inicialmente oculto) -->
+  <div id="miModal" style="display: none;">
+    <div id="miModalContent">
+      <span id="closeModal" style="cursor: pointer; font-size: 30px; color: white; position: absolute; top: 10px; right: 20px;">&times;</span>
+      <iframe id="modalIframe" src="" width="100%" height="100%" style="border:none;"></iframe>
+    </div>
+  </div>
+
+  <div id="agregarCablePopup" style="display:none;" class="regla-popup">
+  <strong style="color:#388e3c;">Agregar cable</strong>
+  <form id="formAgregarCable" onsubmit="return false;">
+    <label style="display:block; margin-top:8px;">Nombre<br>
+      <input type="text" id="cableNombreInput" style="width:100%; margin-top:2px;">
+    </label>
+    <label style="display:block; margin-top:8px;" >Propietario<br>
+      <input type="text" id="cablePropietario" style="width:100%; margin-top:2px;">
+    </label>
+    <label style="display:block; margin-top:8px;" >Tipo<br>
+      <select id="cableFabricante" style="width:48%;margin-right:2%; margin-top:8px;">
+        <option>Fabricante</option>
+      </select>
+      <select id="cableFibra" style="width:48%;">
+        <option> Nro de fibras... </option>
+        <option>1</option>
+        <option>2</option>
+        <option>4</option>
+        <option>6</option>
+        <option>8</option>
+        <option>12</option>
+        <option>16</option>
+        <option>24</option>
+        <option>32</option>
+        <option>48</option>
+        <option>96</option>
+        <option>144</option>
+      </select>
+    </label>
+    
+    <label style="display:block; margin-top:8px;">
+      <select id="cableNombre" style="width:100%;">
+        <option value=""> Seleccione...</option>
+      </select>
+    </label>
+
+
+
+    <p id="cablePuntos">Puntos seleccionados: 0 puntos</p>
+    <p id="cableDistancia">0 metros de cable</p>
+    <hr>
+    <button type="button" onclick="borrarUltimoPuntoCable()" style="background:#03a9f4;">Borrar el último punto</button>
+    <button type="button" onclick="cerrarAgregarCable()" style="background:#e53935;">Cancelar</button>
+  </form>
+</div>
+
+<!-- Modal para editar cable -->
+<div id="editarCableModal" class="regla-popup" style="display:none; position:fixed; z-index:12001; left:50%; top:50%; transform:translate(-50%,-50%); width:370px; max-width:95vw;">
+  <strong style="color:#388e3c;">Editar cable</strong>
+  <form id="formEditarCable" onsubmit="return false;">
+    <label style="display:block; margin-top:8px;">Nombre<br>
+      <input type="text" id="editCableNombreInput" style="width:100%; margin-top:2px;">
+    </label>
+    <label style="display:block; margin-top:8px;">Propietario<br>
+      <input type="text" id="editCablePropietario" style="width:100%; margin-top:2px;">
+    </label>
+    <label style="display:block; margin-top:8px;">Tipo<br>
+      <select id="editCableFabricante" style="width:48%;margin-right:2%; margin-top:8px;">
+        <option>Fabricante</option>
+      </select>
+      <select id="editCableFibra" style="width:48%;">
+        <option> Nro de fibras... </option>
+        <option>1</option>
+        <option>2</option>
+        <option>4</option>
+        <option>6</option>
+        <option>8</option>
+        <option>12</option>
+        <option>16</option>
+        <option>24</option>
+        <option>32</option>
+        <option>48</option>
+        <option>96</option>
+        <option>144</option>
+      </select>
+    </label>
+    <label style="display:block; margin-top:8px;">
+      <select id="editCableNombre" style="width:100%;">
+        <option value=""> Seleccione...</option>
+      </select>
+    </label>
+    <div style="text-align:right; margin-top:16px;">
+      <button type="button" onclick="confirmarEditarCable()" style="background:#03a9f4;">Confirmar</button>
+      <button type="button" onclick="cerrarEditarCable()" style="background:#e53935;">Cancelar</button>
+      
+    </div>
+  </form>
+</div>
+
+<script>
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+  const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+
+  const map = L.map('map', {
+    center: [-11.070093, -77.600411],
+    zoom: 14,
+    layers: [osm]
+  });
+
+  map.zoomControl.setPosition('bottomright');
+
+  L.control.layers(
+    { "🗺️ Callejero": osm, "🛰️ Satelital": esri },
+    null,
+    { position: 'topright' }
+  ).addTo(map);
+
+  // Después de inicializar el mapa:
+  const markerCluster = L.markerClusterGroup();
+  map.addLayer(markerCluster);
+
+
+  let markers = [];
+  let drawnLines = [];
+  let drawing = false;
+  let currentLine = null;
+  let tipoSeleccionado = null;
+  let objetoEditando = null;
+  let esLinea = false;
+  let previewLine = null;
+  let mouseMoveHandler = null;
+  let reglaMouseMoveHandler = null;
+  let puntoMoviendo = null;
+  let moverDblClickHandler = null;
+
+  map.on('zoomend', function() {
+  const zoom = map.getZoom();
+  drawnLines.forEach(lineObj => {
+      if (zoom < 16) {
+        map.removeLayer(lineObj.polyline);
+      } else {
+        if (!map.hasLayer(lineObj.polyline)) {
+          map.addLayer(lineObj.polyline);
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wasActive = btn.classList.contains('active');
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+      if (!wasActive) {
+        btn.classList.add('active');
+        tipoSeleccionado = btn.dataset.tipo;
+      } else {
+        tipoSeleccionado = null;
+      }
+    });
+  });
+
+  // Crear un cluster para cada tipo
+const clusterCajas = L.markerClusterGroup();
+const clusterMufas = L.markerClusterGroup();
+const clusterOficinas = L.markerClusterGroup();
+
+map.addLayer(clusterCajas);
+map.addLayer(clusterMufas);
+map.addLayer(clusterOficinas);
+
+function addClusterTooltip(clusterGroup, tipo) {
+  clusterGroup.on('clustermouseover', function (a) {
+    // Obtener todos los marcadores dentro del cluster
+    const markersInCluster = a.layer.getAllChildMarkers();
+    // Contar cuántos hay de cada tipo
+    const tipos = {};
+    markersInCluster.forEach(m => {
+      const punto = markers.find(p => p.marker === m); // <-- aquí el cambio
+      if (punto) {
+        tipos[punto.tipo] = (tipos[punto.tipo] || 0) + 1;
+      }
+    });
+    // Crear texto resumen
+    const resumen = Object.keys(tipos).join(', ');
+     // Mostrar tooltip
+    a.layer.bindTooltip(resumen, {sticky: true}).openTooltip();
+  });
+}
+// Llama a la función para cada cluster
+addClusterTooltip(clusterCajas, "Caja");
+addClusterTooltip(clusterMufas, "Mufa");
+addClusterTooltip(clusterOficinas, "Oficina");
+
+
+  map.on('click', e => {
+    if (drawing || !tipoSeleccionado) return;
+
+    const name = "Sin nombre";
+    const iconFile = tipoSeleccionado.toLowerCase().replace(/\s/g, "") + ".svg";
+    const icon = L.icon({
+      iconUrl: `img/${iconFile}`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -30]
+    });
+    const marker = L.marker(e.latlng, { icon, draggable: false });
+
+    // Agregar el marcador al cluster correspondiente
+    if (tipoSeleccionado === "Caja") {
+      clusterCajas.addLayer(marker);
+    } else if (tipoSeleccionado === "Mufa") {
+      clusterMufas.addLayer(marker);
+    } else if (tipoSeleccionado === "Oficina") {
+      clusterOficinas.addLayer(marker);
+    }
+
+    const punto = { name, tipo: tipoSeleccionado, marker };
+    marker.bindTooltip(name, { direction: 'top', offset: [0, -10], sticky: true });
+    marker.bindPopup(crearPopupPunto(punto));
+
+    marker.on('click', (e) => {
+      if (cableDibujando && cableLinea) {
+        mostrarPopupConexion((respuesta) => {
+          if (respuesta === 'cancelar') return;
+          const latlng = marker.getLatLng();
+          cablePuntos.push(latlng);
+          cableLinea.addLatLng(latlng);
+          actualizarPopupCable();
+          if (respuesta === 'finalizar') {
+            // Ya no llames a finalizarDibujoCable, solo confirmarAgregarCable()
+            // confirmarAgregarCable() ya limpia y cierra todo
+          }
+        });
+      } else {
+        marker.openPopup();
+      }
+    });
+
+    markers.push(punto);
+    saveMarkers(); // <-- AGREGA ESTA LÍNEA
+  });
+
+  function crearPopupPunto(punto) {
+    const latlng = punto.marker.getLatLng();
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <strong>${punto.name}</strong><br>
+      <small>Coordenadas: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}</small><br>
+      <button class="editar-btn">✏️ Editar</button>
+      <button class="abrir-modal-btn">🖥️ Abrir modal</button>
+      <button class="eliminar-btn">🗑️ Eliminar</button>
+      <button class="mover-btn">🔀 Mover</button>
+    `;
+    return div;
+  }
+ 
+
+
+    document.getElementById('fibraItem').onclick = () => {
+    if (drawing) return;
+    drawing = true;
+    const color = "#ff0000"; // Rojo por defecto
+    currentLine = L.polyline([], { color }).addTo(map);
+  
+    map.on('click', drawPoint);
+    map.on('dblclick', finishLine);
+  };
+
+map.on('popupopen', function(e) {
+  const marker = e.popup._source;
+  const punto = markers.find(p => p.marker === marker);
+ 
+
+  if (!punto) return;
+
+  const container = e.popup.getElement();
+
+  // Botón Editar
+  const editarBtn = container.querySelector('.editar-btn');
+  if (editarBtn) editarBtn.onclick = () => abrirEdicion(punto, 'punto');
+
+  // Botón Abrir modal
+  const abrirModalBtn = container.querySelector('.abrir-modal-btn');
+  if (abrirModalBtn) abrirModalBtn.onclick = () => abrirModal(punto);
+
+  // Botón Eliminar
+  const eliminarBtn = container.querySelector('.eliminar-btn');
+  if (eliminarBtn) eliminarBtn.onclick = () => {
+    const currentZoom = map.getZoom();
+    const currentCenter = map.getCenter();
+
+    // Elimina del cluster específico
+    if (punto.tipo === "Caja") {
+      clusterCajas.removeLayer(punto.marker);
+    } else if (punto.tipo === "Mufa") {
+      clusterMufas.removeLayer(punto.marker);
+    } else if (punto.tipo === "Oficina") {
+      clusterOficinas.removeLayer(punto.marker);
+    }
+    // Elimina del cluster general (por si acaso)
+    markerCluster.removeLayer(punto.marker);
+
+    // Eliminar el marcador del mapa
+    map.removeLayer(marker);
+
+    // Eliminar de la lista de marcadores
+    markers = markers.filter(m => m.marker !== marker);
+
+    // Guardar cambios
+    saveMarkers();
+
+    // Restaurar vista anterior
+    map.setView(currentCenter, currentZoom);
+
+    // Cerrar el popup
+    map.closePopup();
+  };
+
+  // --- AQUÍ DEBE IR EL BLOQUE DEL BOTÓN MOVER, FUERA DEL IF DE ELIMINAR ---
+
+  const moverBtn = container.querySelector('.mover-btn');
+
+if (moverBtn) {
+  moverBtn.onclick = function() {
+    marker.closePopup();
+    moverBtn.disabled = true;
+    moverBtn.classList.add('blink');
+    moverBtn.textContent = "Haz doble click en el mapa...";
+
+    marker.setOpacity(0);
+    const oldLatLng = marker.getLatLng();
+
+    // --- NUEVO: Guarda los índices de los vértices conectados ---
+    const lineVertexMap = [];
+    drawnLines.forEach(line => {
+      const indices = [];
+      line.latlngs.forEach((ll, idx) => {
+        if (
+          Math.abs(ll.lat - oldLatLng.lat) < 1e-6 &&
+          Math.abs(ll.lng - oldLatLng.lng) < 1e-6
+        ) {
+          indices.push(idx);
+        }
+      });
+      if (indices.length > 0) {
+        lineVertexMap.push({ line, indices });
+      }
+    });
+
+    let tempMarker = L.marker(oldLatLng, {
+      icon: marker.options.icon,
+      opacity: 1
+    }).addTo(map);
+    tempMarker._icon.classList.add('blink');
+
+    function mouseMoveHandler(e) {
+      tempMarker.setLatLng(e.latlng);
+
+      // ACTUALIZA EN TIEMPO REAL LAS LÍNEAS CONECTADAS usando los índices guardados
+      lineVertexMap.forEach(({ line, indices }) => {
+        const newLatLngs = line.latlngs.slice();
+        indices.forEach(idx => {
+          newLatLngs[idx] = e.latlng;
+        });
+        line.polyline.setLatLngs(newLatLngs);
+      });
+    }
+    map.on('mousemove', mouseMoveHandler);
+
+    moverDblClickHandler = function(ev) {
+      const newLatLng = ev.latlng;
+      marker.setLatLng(newLatLng);
+      punto.latlng = newLatLng;
+      saveMarkers();
+
+      // ACTUALIZA LAS LÍNEAS CONECTADAS usando los índices guardados
+      lineVertexMap.forEach(({ line, indices }) => {
+        indices.forEach(idx => {
+          line.latlngs[idx] = newLatLng;
+        });
+        line.polyline.setLatLngs(line.latlngs);
+        saveLines();
+      });
+
+      map.off('mousemove', mouseMoveHandler);
+      map.off('dblclick', moverDblClickHandler);
+      map.removeLayer(tempMarker);
+      marker.setOpacity(1);
+      moverBtn.disabled = false;
+      moverBtn.classList.remove('blink');
+      moverBtn.textContent = "🔀 Mover";
+      marker.openPopup();
+    };
+
+    map.on('dblclick', moverDblClickHandler);
+  };
+}
+  moverBtn.onclick = function() {
+    marker.closePopup();
+    moverBtn.disabled = true;
+    moverBtn.classList.add('blink');
+    moverBtn.textContent = "Haz doble click en el mapa...";
+
+    // Oculta el marcador original
+    marker.setOpacity(0);
+
+    // Guarda la posición anterior del punto
+    const oldLatLng = marker.getLatLng();
+
+    // Crea un marcador temporal que sigue el mouse
+    let tempMarker = L.marker(oldLatLng, {
+      icon: marker.options.icon,
+      opacity: 1
+    }).addTo(map);
+    tempMarker._icon.classList.add('blink');
+
+    // Handler para mover el marcador temporal con el mouse
+    function mouseMoveHandler(e) {
+      tempMarker.setLatLng(e.latlng);
+    }
+    map.on('mousemove', mouseMoveHandler);
+
+    // Handler para doble click
+    moverDblClickHandler = function(ev) {
+      // Nueva posición
+      const newLatLng = ev.latlng;
+
+      // Mueve el marcador original
+      marker.setLatLng(newLatLng);
+      punto.latlng = newLatLng;
+      saveMarkers();
+
+      // Actualiza TODAS las líneas conectadas a este punto
+      drawnLines.forEach(line => {
+        let changed = false;
+        line.latlngs = line.latlngs.map(ll => {
+          // Si el vértice coincide con la posición anterior del punto, lo actualiza
+          if (
+            Math.abs(ll.lat - oldLatLng.lat) < 1e-6 &&
+            Math.abs(ll.lng - oldLatLng.lng) < 1e-6
+          ) {
+            changed = true;
+            return newLatLng;
+          }
+          return ll;
+        });
+        if (changed) {
+          line.polyline.setLatLngs(line.latlngs);
+          saveLines();
+        }
+      });
+
+      // Limpia todo
+      map.off('mousemove', mouseMoveHandler);
+      map.off('dblclick', moverDblClickHandler);
+      map.removeLayer(tempMarker);
+      marker.setOpacity(1);
+      moverBtn.disabled = false;
+      moverBtn.classList.remove('blink');
+      moverBtn.textContent = "🔀 Mover";
+      marker.openPopup();
+    };
+
+    map.on('dblclick', moverDblClickHandler);
+  };
+}
+);
+
+function abrirModal(punto) {
+  const modal = document.getElementById('miModal');
+  modal.style.display = 'flex';
+  const iframe = document.getElementById('modalIframe');
+  const pointId = encodeURIComponent(punto.name + "_" + punto.marker.getLatLng().lat + "_" + punto.marker.getLatLng().lng);
+  iframe.src = "modal.html?pointId=" + pointId;
+
+  // Botón cerrar
+  const closeModal = document.getElementById('closeModal');
+  closeModal.onclick = function() {
+    modal.style.display = 'none';
+    iframe.src = "";
+  };
+
+  // Solo asigna el evento una vez
+  if (!modal._outsideClickAssigned) {
+    window.addEventListener('click', function(event) {
+      if (event.target == modal) {
+        modal.style.display = 'none';
+        iframe.src = "";
+      }
+    });
+    modal._outsideClickAssigned = true;
+  }
+}
+
+
+
+  function drawPoint(e) {
+    if (!drawing || !currentLine) return;
+
+    const latlng = e.latlng;
+
+    // Añadir nuevo punto a la línea real
+    currentLine.addLatLng(latlng);
+
+
+    const puntos = currentLine.getLatLngs();
+
+    // Crear o actualizar la línea discontinua de preview
+    if (!previewLine) {
+      // Solo se ejecuta una vez: al primer clic
+      previewLine = L.polyline([latlng, latlng], {
+        color: currentLine.options.color,
+        dashArray: '5,5'
+      }).addTo(map);
+    }
+
+    // Agregar evento del mouse sólo una vez
+    if (!mouseMoveHandler) {
+      mouseMoveHandler = function (evt) {
+        const ultimos = currentLine.getLatLngs();
+        if (ultimos.length > 0) {
+          const last = ultimos[ultimos.length - 1];
+          previewLine.setLatLngs([last, evt.latlng]);
+        }
+      };
+      map.on('mousemove', mouseMoveHandler);
+    }
+  }
+
+
+
+  function finishLine() {
+    if (!drawing || !currentLine) return;
+
+    const latlngs = currentLine.getLatLngs();
+    let distanciaTotal = 0;
+    for (let i = 0; i < latlngs.length - 1; i++) {
+      distanciaTotal += map.distance(latlngs[i], latlngs[i + 1]);
+    }
+    const distanciaMetros = distanciaTotal.toFixed(2);
+
+    const lineObj = {
+      name: '',
+      tipo: '',
+      distancia: distanciaMetros,
+      latlngs,
+      polyline: currentLine
+    };
+
+    currentLine.bindTooltip("Línea sin nombre", { sticky: true });
+
+    const popup = createPopupContent(lineObj);
+    currentLine.bindPopup(popup);
+
+    drawnLines.push(lineObj);
+    resetDrawing();
+  }
+
+  function createPopupContent(lineObj) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <strong>Nombre:</strong> ${lineObj.name || 'Sin nombre'}<br>
+      <strong>Tipo:</strong> ${lineObj.tipo || 'Sin definir'}<br>
+      <strong>Distancia Total:</strong> ${lineObj.distancia} m<br>
+    `;
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '✏️ Editar';
+    editBtn.className = 'popup-btn edit';
+    editBtn.style.marginRight = '6px';
+    editBtn.onclick = () => {
+      abrirEdicion(lineObj, 'linea');
+    };
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = '🗑️ Eliminar';
+    deleteBtn.className = 'popup-btn delete';
+    deleteBtn.onclick = () => {
+      map.removeLayer(lineObj.polyline);
+      drawnLines = drawnLines.filter(l => l !== lineObj);
+    };
+
+    div.appendChild(editBtn);
+    div.appendChild(deleteBtn);
+    return div;
+  }
+
+  function resetDrawing() {
+    drawing = false;
+    currentLine = null;
+
+    if (previewLine) {
+      map.removeLayer(previewLine);
+      previewLine = null;
+    }
+
+    if (mouseMoveHandler) {
+      map.off('mousemove', mouseMoveHandler);
+      mouseMoveHandler = null;
+    }
+
+    map.off('click', drawPoint);
+    map.off('dblclick', finishLine);
+  }
+
+
+  document.getElementById('exportKmlBtn').onclick = () => {
+    let kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n`;
+    markers.forEach(({ name, tipo, marker }) => {
+      const { lat, lng } = marker.getLatLng();
+      kml += `  <Placemark>\n    <name>${name}</name>\n    <description>${tipo}</description>\n    <Point><coordinates>${lng},${lat},0</coordinates></Point>\n  </Placemark>\n`;
+    });
+    drawnLines.forEach(line => {
+      const coords = line.polyline.getLatLngs().map(p => `${p.lng},${p.lat},0`).join(' ');
+      kml += `  <Placemark>\n    <name>${line.name}</name>\n    <LineString><coordinates>${coords}</coordinates></LineString>\n  </Placemark>\n`;
+    });
+    kml += `</Document>\n</kml>`;
+    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'red_fibra.kml';
+    a.click();
+  };
+
+  // Herramienta de medición
+  let midiendo = false;
+  let puntosRegla = [];
+  let lineaRegla = null;
+
+  function activarRegla() {
+    if (midiendo) return;
+    midiendo = true;
+    puntosRegla = [];
+    lineaRegla = L.polyline([], { color: 'blue', dashArray: '5,5' }).addTo(map);
+    document.getElementById('reglaPopup').style.display = "block";
+    map.on('click', clickRegla);
+
+    reglaMouseMoveHandler = function(e) {
+      if (puntosRegla.length > 0) {
+        const ultima = puntosRegla[puntosRegla.length - 1];
+        lineaRegla.setLatLngs([...puntosRegla, e.latlng]);
+      }
+    };
+    map.on('mousemove', reglaMouseMoveHandler);
+
+  }
+
+  function clickRegla(e) {
+    puntosRegla.push(e.latlng);
+    lineaRegla.addLatLng(e.latlng);
+    actualizarPopup();
+  }
+
+  function actualizarPopup() {
+    document.getElementById('popupPuntos').textContent = `Puntos seleccionados: ${puntosRegla.length} puntos`;
+    document.getElementById('popupDistancia').textContent = `${calcularDistancia(puntosRegla).toFixed(2)}m Distancia Total`;
+  }
+
+  function borrarUltimoPunto() {
+    puntosRegla.pop();
+    lineaRegla.setLatLngs(puntosRegla);
+    actualizarPopup();
+  }
+
+  function concluirMedicion() {
+    if (lineaRegla) map.removeLayer(lineaRegla);
+    lineaRegla = null;
+    puntosRegla = [];
+    midiendo = false;
+    document.getElementById('reglaPopup').style.display = "none";
+    map.off('click', clickRegla);
+  }
+
+  function calcularDistancia(latlngs) {
+    let total = 0;
+    for (let i = 1; i < latlngs.length; i++) {
+      total += map.distance(latlngs[i - 1], latlngs[i]);
+    }
+    return total;
+  }
+
+  function abrirEdicion(objeto, tipoObjeto) {
+    objetoEditando = objeto;
+    esLinea = tipoObjeto === 'linea';
+
+    document.getElementById('editNombre').value = objeto.name || '';
+    document.getElementById('editTipo').value = objeto.tipo || '';
+    document.getElementById('editarPopup').style.display = 'block';
+
+    // Mostrar/ocultar el campo "Tipo"
+    const tipoField = document.getElementById('editTipo').parentElement.parentElement;
+    tipoField.style.display = esLinea ? 'block' : 'none';
+
+    // Actualizar el título del popup
+    const titulo = document.getElementById('editarTitulo');
+    if (esLinea) {
+      titulo.textContent = 'Editar Línea';
+    } else {
+      titulo.textContent = `Editar ${objeto.tipo}`;
+    }
+  }
+
+
+  function cancelarEdicion() {
+    document.getElementById('editarPopup').style.display = 'none';
+    objetoEditando = null;
+  }
+
+  function guardarEdicion() {
+    const nuevoNombre = document.getElementById('editNombre').value.trim();
+    const nuevoTipo = document.getElementById('editTipo').value.trim();
+
+    if (nuevoNombre) {
+      objetoEditando.name = nuevoNombre;
+      if (esLinea) {
+        objetoEditando.polyline.setTooltipContent(nuevoNombre);
+      } else {
+        objetoEditando.marker.setTooltipContent(nuevoNombre);
+      }
+    }
+
+    if (nuevoTipo) {
+      objetoEditando.tipo = nuevoTipo;
+    }
+
+    if (esLinea) {
+      objetoEditando.polyline.bindPopup(createPopupContent(objetoEditando)).openPopup();
+    } else {
+      objetoEditando.marker.bindPopup(crearPopupPunto(objetoEditando)).openPopup();
+    }
+
+    document.getElementById('editarPopup').style.display = 'none';
+    objetoEditando = null;
+    saveMarkers(); // <-- AGREGA ESTA LÍNEA
+  }
+
+
+  // Escuchar tecla ESC para cancelar trazado
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && drawing && currentLine) {
+      // Cancelar y eliminar línea actual
+      map.removeLayer(currentLine);
+      currentLine = null;
+
+      if (previewLine) {
+        map.removeLayer(previewLine);
+        previewLine = null;
+      }
+
+      if (mouseMoveHandler) {
+        map.off('mousemove', mouseMoveHandler);
+        mouseMoveHandler = null;
+      }
+
+      map.off('click', drawPoint);
+      map.off('dblclick', finishLine);
+
+      drawing = false;
+    }
+  });
+
+
+
+function mostrarPopupConexion(callback) {
+  const popup = document.getElementById('confirmarConexionPopup');
+  popup.style.display = 'block';
+
+  const btnConectar = document.getElementById('btnConectar');
+  const btnFinalizar = document.getElementById('btnConectarFinalizar');
+  const btnCancelar = document.getElementById('btnCancelarConexion');
+
+  // Limpiar listeners previos
+  btnConectar.onclick = btnFinalizar.onclick = btnCancelar.onclick = null;
+
+  btnConectar.onclick = () => {
+    popup.style.display = 'none';
+    callback('conectar');
+  };
+  btnFinalizar.onclick = () => {
+    popup.style.display = 'none';
+    // Agrega el último punto antes de finalizar
+    if (typeof callback === 'function') callback('finalizar');
+  };
+
+  btnCancelar.onclick = () => {
+    popup.style.display = 'none';
+    callback('cancelar');
+  };
+}
+
+document.getElementById('fibraItem').onclick = () => {
+  if (drawing) return;
+  drawing = true;
+  const color = "#ff0000"; // Rojo por defecto
+  currentLine = L.polyline([], { color }).addTo(map);
+
+  map.on('click', drawPoint);
+  map.on('dblclick', finishLine);
+};
+
+
+const menuBtn = document.getElementById('menuBtn');
+const menuLateral = document.getElementById('menuLateral');
+
+menuBtn.onclick = function(e) {
+  e.stopPropagation();
+  // Alternar visibilidad del menú
+  menuLateral.style.display = menuLateral.style.display === 'block' ? 'none' : 'block';
+};
+
+// Cerrar el menú si se hace clic fuera
+document.addEventListener('click', function(e) {
+  if (
+    menuLateral.style.display === 'block' &&
+    !menuLateral.contains(e.target) &&
+    e.target !== menuBtn &&
+    !menuBtn.contains(e.target)
+  ) {
+    menuLateral.style.display = 'none';
+  }
+});
+
+    // Redirecciones del menú
+    document.getElementById('mapaItem').onclick = function() {
+        window.location.href = 'v2 copy.html';
+    };
+    document.getElementById('fibraItem').onclick = function() {
+        window.location.href = 'tipos_cables.html';
+    };
+    document.getElementById('usuariosItem').onclick = function() {
+        window.location.href = 'users.html';
+    };
+     // Nuevo manejador
+    document.getElementById('coloresItem').onclick = function() {
+        window.location.href = 'cod_colors.html';
+    };    
+
+
+    function saveMarkers() {
+  const data = markers.map(p => ({
+    name: p.name,
+    tipo: p.tipo,
+    latlng: p.marker.getLatLng()
+  }));
+  localStorage.setItem('tomodatMarkers', JSON.stringify(data));
+}
+
+function loadMarkers() {
+  const data = JSON.parse(localStorage.getItem('tomodatMarkers') || '[]');
+  data.forEach(p => {
+    const iconFile = p.tipo.toLowerCase().replace(/\s/g, "") + ".svg";
+    const icon = L.icon({
+      iconUrl: `img/${iconFile}`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -30]
+    });
+    const marker = L.marker(p.latlng, { icon });
+
+    // Agregar al cluster correcto
+    if (p.tipo === "Caja") {
+      clusterCajas.addLayer(marker);
+    } else if (p.tipo === "Mufa") {
+      clusterMufas.addLayer(marker);
+    } else if (p.tipo === "Oficina") {
+      clusterOficinas.addLayer(marker);
+    }
+
+    const punto = { name: p.name, tipo: p.tipo, marker };
+    marker.bindTooltip(p.name, { direction: 'top', offset: [0, -10], sticky: true });
+    marker.bindPopup(crearPopupPunto(punto));
+
+    marker.on('click', (e) => {
+      marker.openPopup();
+      if (cableDibujando && cableLinea) {
+        mostrarPopupConexion((respuesta) => {
+          if (respuesta === 'cancelar') return;
+          const latlng = marker.getLatLng();
+          cablePuntos.push(latlng);
+          cableLinea.addLatLng(latlng);
+          actualizarPopupCable();
+          if (respuesta === 'finalizar') {
+            // Aquí debes finalizar el dibujo
+            confirmarAgregarCable();
+          }
+        });
+      }
+    });
+
+    markers.push(punto);
+  });
+}
+// Llama a loadMarkers() al inicio
+loadMarkers();
+loadLines();
+// Llama a saveMarkers() cada vez que agregues, edites o elimines un punto
+
+function agregarSplitter() {
+  // ...existing code para crear el splitter...
+  habilitarMover(`mover${id}Btn`, id);
+  div.querySelectorAll(".puerto-conectable").forEach(btn => btn.addEventListener("click", conectarPuerto));
+  saveModalStateForPoint(pointId); // <-- GUARDA AUTOMÁTICAMENTE
+}
+
+let cableDibujando = false;
+let cablePuntos = [];
+let cableLinea = null;
+let cableMouseMoveHandler = null;
+
+  // Cargar fabricantes únicos y nombres según fabricante
+  function cargarFabricantesYNombres() {
+  const tiposCables = JSON.parse(localStorage.getItem('tiposCables') || '[]');
+  const fabricantesUnicos = [...new Set(tiposCables.map(c => c.fabricante).filter(f => f && f.trim() !== ''))];
+
+  // Llena el select de fabricantes
+  const fabricanteSelect = document.getElementById('cableFabricante');
+  fabricanteSelect.innerHTML = '<option value="">Fabricante...</option>';
+  fabricantesUnicos.forEach(fab => {
+    const opt = document.createElement('option');
+    opt.value = fab;
+    opt.textContent = fab;
+    fabricanteSelect.appendChild(opt);
+  });
+
+    // ...dentro de cargarFabricantesYNombres()...
+  fabricanteSelect.onchange = function() {
+    const fabSel = this.value;
+    let nombres;
+    if (!fabSel) {
+      // Si no hay fabricante seleccionado, mostrar todos los nombres
+      nombres = tiposCables.map(c => c.nombre);
+    } else {
+      // Si hay fabricante, filtrar por fabricante
+      nombres = tiposCables
+        .filter(c => c.fabricante === fabSel)
+        .map(c => c.nombre);
+    }
+    const nombreSelect = document.getElementById('cableNombre');
+    nombreSelect.innerHTML = '<option value="">--seleccione--</option>';
+    nombres.forEach(nom => {
+      const opt = document.createElement('option');
+      opt.value = nom;
+      opt.textContent = nom;
+      nombreSelect.appendChild(opt);
+    });
+  };
+
+}
+
+document.getElementById('agregarCableBtn').onclick = function() {
+  // Limpiar campos del formulario
+  document.getElementById('cableNombreInput').value = '';
+  document.getElementById('cablePropietario').value = '';
+  document.getElementById('cableFabricante').selectedIndex = 0;
+  document.getElementById('cableFibra').selectedIndex = 0;
+  document.getElementById('cableNombre').selectedIndex = 0;
+
+  cargarFabricantesYNombres();
+  if (cableDibujando) return;
+  cableDibujando = true;
+  cablePuntos = [];
+  cableLinea = L.polyline([], { color: '#000', dashArray: '5,5' }).addTo(map);
+  document.getElementById('agregarCablePopup').style.display = "block";
+  map.on('click', clickAgregarCable);
+
+  cableMouseMoveHandler = function(e) {
+    if (cablePuntos.length > 0 && cableLinea) {
+      cableLinea.setLatLngs([...cablePuntos, e.latlng]);
+    }
+  };
+  map.on('mousemove', cableMouseMoveHandler);
+
+  actualizarPopupCable();
+};
+
+function clickAgregarCable(e) {
+  cablePuntos.push(e.latlng);
+  cableLinea.addLatLng(e.latlng);
+  actualizarPopupCable();
+}
+
+function actualizarPopupCable() {
+  document.getElementById('cablePuntos').textContent = `Puntos seleccionados: ${cablePuntos.length} puntos`;
+  document.getElementById('cableDistancia').textContent = `${calcularDistancia(cablePuntos).toFixed(2)} metros de cable`;
+}
+
+function borrarUltimoPuntoCable() {
+  cablePuntos.pop();
+  cableLinea.setLatLngs(cablePuntos);
+  actualizarPopupCable();
+}
+
+function cerrarAgregarCable() {
+  if (cableLinea) map.removeLayer(cableLinea);
+  cableLinea = null;
+  cablePuntos = [];
+  cableDibujando = false;
+  document.getElementById('agregarCablePopup').style.display = "none";
+  map.off('click', clickAgregarCable);
+  if (cableMouseMoveHandler) {
+    map.off('mousemove', cableMouseMoveHandler);
+    cableMouseMoveHandler = null;
+  }
+}
+
+
+function confirmarAgregarCable() {
+  if (cablePuntos.length < 2) {
+    alert("Debes seleccionar al menos dos puntos para el cable.");
+    return;
+  }
+
+  const nombre = document.getElementById('cableNombreInput').value.trim();
+  const propietario = document.getElementById('cablePropietario').value.trim();
+  const fabricante = document.getElementById('cableFabricante').value;
+  const fibras = document.getElementById('cableFibra').value;
+  const tipo = document.getElementById('cableNombre').value;
+  const distancia = calcularDistancia(cablePuntos).toFixed(2);
+
+  // Buscar el color del tipo de cable seleccionado
+  const tiposCables = JSON.parse(localStorage.getItem('tiposCables') || '[]');
+  const cableTipo = tiposCables.find(c => c.nombre === tipo);
+  const colorCable = cableTipo && cableTipo.color ? cableTipo.color : '#000'; // Negro por defecto
+
+  // Cambiar el color de la línea
+  if (cableLinea) {
+    cableLinea.setStyle({ color: colorCable, dashArray: null });
+  }
+
+  // Crear objeto cable
+  const cableObj = {
+    nombre,
+    propietario,
+    fabricante,
+    fibras,
+    tipo,
+    color: colorCable,
+    distancia,
+    latlngs: [...cablePuntos],
+    polyline: cableLinea
+  };
+  drawnLines.push(cableObj);
+  saveLines(); // <-- AGREGA ESTA LÍNEA
+
+  cableLinea.bindPopup(`
+    <strong>${nombre || 'Cable sin nombre'}</strong><br>
+    Propietario: ${propietario}<br>
+    Fabricante: ${fabricante}<br>
+    Fibras: ${fibras}<br>
+    Tipo: ${tipo}<br>
+    Distancia: ${distancia} m
+    <br>
+    <button class="popup-btn edit" onclick="abrirEditarCableFromPopup('${nombre}')">✏️ Editar</button>
+    <button class="popup-btn delete" onclick="eliminarCableFromPopup('${nombre}')">🗑️ Eliminar</button>
+  `);
+
+  // Mostrar el nombre como tooltip al pasar el mouse
+  cableLinea.bindTooltip(nombre || 'Cable sin nombre', {sticky: true});
+
+  // Limpiar estado y cerrar popup SOLO aquí
+  cableLinea = null;
+  cablePuntos = [];
+  cableDibujando = false;
+  document.getElementById('agregarCablePopup').style.display = "none";
+  map.off('click', clickAgregarCable);
+  if (cableMouseMoveHandler) {
+    map.off('mousemove', cableMouseMoveHandler);
+    cableMouseMoveHandler = null;
+  }
+}
+(function() {
+  const popup = document.getElementById('agregarCablePopup');
+  let isDragging = false, offsetX = 0, offsetY = 0;
+
+  // Crea un área "header" para mover (puedes ajustar el selector si tienes un div específico)
+  const header = popup.querySelector('strong');
+  header.style.cursor = 'move';
+
+  header.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    // Calcula el offset respecto al popup
+    const rect = popup.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    popup.style.right = 'auto';
+    const minTop = 10;
+    const minLeft = 10;
+    // Calcula la altura del header
+    const headerHeight = popup.querySelector('strong').offsetHeight + 16; // 16px de margen extra
+    // Limita el top para que el header nunca se esconda
+    const maxTop = window.innerHeight - headerHeight;
+    const maxLeft = window.innerWidth - popup.offsetWidth - 10;
+    let newTop = e.clientY - offsetY;
+    let newLeft = e.clientX - offsetX;
+    if (newTop < minTop) newTop = minTop;
+    if (newLeft < minLeft) newLeft = minLeft;
+    if (newTop > maxTop) newTop = maxTop;
+    if (newLeft > maxLeft) newLeft = maxLeft;
+    popup.style.left = newLeft + 'px';
+    popup.style.top = newTop + 'px';
+    popup.style.bottom = 'auto';
+    popup.style.position = 'fixed';
+  });
+  document.addEventListener('mouseup', function() {
+    isDragging = false;
+    document.body.style.userSelect = '';
+  });
+})();
+
+
+function finalizarDibujoCable() {
+  cableDibujando = false;
+  map.off('click', clickAgregarCable);
+  if (cableMouseMoveHandler) {
+    map.off('mousemove', cableMouseMoveHandler);
+    cableMouseMoveHandler = null;
+  }
+}
+
+let cableEditando = null;
+
+function abrirEditarCable(cableObj) {
+  cableEditando = cableObj;
+  document.getElementById('editCableNombreInput').value = cableObj.nombre;
+  document.getElementById('editCablePropietario').value = cableObj.propietario;
+  cargarFabricantesYNombresEditar(cableObj.fabricante, cableObj.tipo);
+  document.getElementById('editCableFibra').value = cableObj.fibras;
+  document.getElementById('editarCableModal').style.display = "block";
+}
+
+function cerrarEditarCable() {
+  document.getElementById('editarCableModal').style.display = "none";
+  cableEditando = null;
+}
+
+function confirmarEditarCable() {
+  if (!cableEditando) return;
+  // Actualiza los datos
+  cableEditando.nombre = document.getElementById('editCableNombreInput').value.trim();
+  cableEditando.propietario = document.getElementById('editCablePropietario').value.trim();
+  cableEditando.fabricante = document.getElementById('editCableFabricante').value;
+  cableEditando.fibras = document.getElementById('editCableFibra').value;
+  cableEditando.tipo = document.getElementById('editCableNombre').value;
+
+  // Actualiza color si cambió el tipo
+  const tiposCables = JSON.parse(localStorage.getItem('tiposCables') || '[]');
+  const cableTipo = tiposCables.find(c => c.nombre === cableEditando.tipo);
+  const colorCable = cableTipo && cableTipo.color ? cableTipo.color : '#000';
+  cableEditando.color = colorCable;
+  cableEditando.polyline.setStyle({ color: colorCable, dashArray: null });
+
+  // Actualiza popup y tooltip
+  cableEditando.polyline.bindPopup(`
+    <strong>${cableEditando.nombre || 'Cable sin nombre'}</strong><br>
+    Propietario: ${cableEditando.propietario}<br>
+    Fabricante: ${cableEditando.fabricante}<br>
+    Fibras: ${cableEditando.fibras}<br>
+    Tipo: ${cableEditando.tipo}<br>
+    Distancia: ${cableEditando.distancia} m
+    <br>
+    <button class="popup-btn edit" onclick="abrirEditarCableFromPopup('${cableEditando.nombre}')">✏️ Editar</button>
+    <button class="popup-btn delete" onclick="eliminarCableFromPopup('${cableEditando.nombre}')">🗑️ Eliminar</button>
+  `);
+  cableEditando.polyline.bindTooltip(cableEditando.nombre || 'Cable sin nombre', {sticky: true});
+
+  cerrarEditarCable();
+  saveLines(); 
+}
+
+// Para cargar selects en el modal de edición
+function cargarFabricantesYNombresEditar(fabricanteSel, nombreSel) {
+  const tiposCables = JSON.parse(localStorage.getItem('tiposCables') || '[]');
+  const fabricantesUnicos = [...new Set(tiposCables.map(c => c.fabricante).filter(f => f && f.trim() !== ''))];
+  const fabricanteSelect = document.getElementById('editCableFabricante');
+  fabricanteSelect.innerHTML = '<option value="">Fabricante...</option>';
+  fabricantesUnicos.forEach(fab => {
+    const opt = document.createElement('option');
+    opt.value = fab;
+    opt.textContent = fab;
+    fabricanteSelect.appendChild(opt);
+  });
+  fabricanteSelect.value = fabricanteSel || '';
+
+  // Nombres según fabricante
+  let nombres;
+  if (!fabricanteSel) {
+    nombres = tiposCables.map(c => c.nombre);
+  } else {
+    nombres = tiposCables.filter(c => c.fabricante === fabricanteSel).map(c => c.nombre);
+  }
+  const nombreSelect = document.getElementById('editCableNombre');
+  nombreSelect.innerHTML = '<option value="">--seleccione--</option>';
+  nombres.forEach(nom => {
+    const opt = document.createElement('option');
+    opt.value = nom;
+    opt.textContent = nom;
+    nombreSelect.appendChild(opt);
+  });
+  nombreSelect.value = nombreSel || '';
+}
+
+function abrirEditarCableFromPopup(nombre) {
+  const cableObj = drawnLines.find(c => c.nombre === nombre);
+  if (cableObj) abrirEditarCable(cableObj);
+}
+
+function eliminarCableFromPopup(nombre) {
+  const idx = drawnLines.findIndex(c => c.nombre === nombre);
+  if (idx !== -1) {
+    map.removeLayer(drawnLines[idx].polyline);
+    drawnLines.splice(idx, 1);
+    saveLines(); // <-- AGREGA ESTA LÍNEA
+  }
+}
+
+
+(function() {
+  const popup = document.getElementById('editarCableModal');
+  if (!popup) return;
+  let isDragging = false, offsetX = 0, offsetY = 0;
+
+  // Usa el <strong> como área para mover
+  const header = popup.querySelector('strong');
+  header.style.cursor = 'move';
+
+  header.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    const rect = popup.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    popup.style.right = 'auto';
+    const minTop = 10;
+    const minLeft = 10;
+    const headerHeight = header.offsetHeight + 16;
+    const maxTop = window.innerHeight - headerHeight;
+    const maxLeft = window.innerWidth - popup.offsetWidth - 10;
+    let newTop = e.clientY - offsetY;
+    let newLeft = e.clientX - offsetX;
+    if (newTop < minTop) newTop = minTop;
+    if (newLeft < minLeft) newLeft = minLeft;
+    if (newTop > maxTop) newTop = maxTop;
+    if (newLeft > maxLeft) newLeft = maxLeft;
+    popup.style.left = newLeft + 'px';
+    popup.style.top = newTop + 'px';
+    popup.style.bottom = 'auto';
+    popup.style.position = 'fixed';
+  });
+
+  document.addEventListener('mouseup', function() {
+    isDragging = false;
+    document.body.style.userSelect = '';
+  });
+})();
+
+function loadLines() {
+  const data = JSON.parse(localStorage.getItem('tomodatLines') || '[]');
+  data.forEach(line => {
+    const polyline = L.polyline(line.latlngs, { color: line.color || '#000', dashArray: null }).addTo(map);
+    polyline.bindTooltip(line.nombre || 'Cable sin nombre', {sticky: true});
+    polyline.bindPopup(`
+      <strong>${line.nombre || 'Cable sin nombre'}</strong><br>
+      Propietario: ${line.propietario || ''}<br>
+      Fabricante: ${line.fabricante || ''}<br>
+      Fibras: ${line.fibras || ''}<br>
+      Tipo: ${line.tipo || ''}<br>
+      Distancia: ${line.distancia || ''} m
+      <br>
+      <button class="popup-btn edit" onclick="abrirEditarCableFromPopup('${line.nombre}')">✏️ Editar</button>
+      <button class="popup-btn delete" onclick="eliminarCableFromPopup('${line.nombre}')">🗑️ Eliminar</button>
+    `);
+    drawnLines.push({
+      ...line,
+      polyline
+    });
+  });
+}
+
+function saveLines() {
+  const data = drawnLines.map(line => ({
+    nombre: line.nombre,
+    propietario: line.propietario,
+    fabricante: line.fabricante,
+    fibras: line.fibras,
+    tipo: line.tipo,
+    color: line.color,
+    distancia: line.distancia,
+    latlngs: line.latlngs
+  }));
+  localStorage.setItem('tomodatLines', JSON.stringify(data));
+}
+
+document.getElementById('logoutBtn').onclick = function() {
+  window.location.href = 'login.html';
+};
+</script> 
+
+<div id="confirmarConexionPopup" style="display:none; position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);
+  background: white; padding: 20px; border: 1px solid #ccc; z-index: 9999; border-radius: 8px;">
+  <p>¿Deseas conectar este punto?</p>
+  <button id="btnConectar">✅ Conectar</button>
+  <button id="btnConectarFinalizar">🟢 Conectar y finalizar</button>
+  <button id="btnCancelarConexion">❌ Cancelar</button>
+</div>
+
+</body>
+</html>

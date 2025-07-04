@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Códigos de colores</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts y favicon -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+    <link rel="icon" type="image/svg+xml" href="img/icono_datpon.svg">
+    <style>
+        body { font-family: Roboto, Arial, sans-serif; background: #f8f8f8; margin: 0; }
+        .top-bar {
+          background: #292929;
+          color: #fff;
+          padding: 0 20px;
+          display: flex;
+          align-items: center;
+          height: 56px;
+          border-bottom: 2px solid #393939;
+        }
+        .top-bar img { height: 42px; vertical-align: middle; }
+        #menuBtn {
+          background: #f37018;
+          border: none;
+          border-radius: 6px;
+          width: 40px;
+          height: 40px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+        }
+        .menu-icon {
+          width: 28px;
+          height: 28px;
+          object-fit: contain;
+          display: block;
+        }
+        #menuLateral {
+          display: none;
+          position: absolute;
+          top: 48px;
+          left: 0;
+          background: #292929;
+          color: white;
+          min-width: 220px;
+          max-width: 300px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          border-top-left-radius: 0;
+          border-top-right-radius: 0;
+          border-bottom-left-radius: 8px;
+          border-bottom-right-radius: 8px;
+          padding: 8px 0;
+          margin: 0;
+          z-index: 1000;
+        }
+        #menuLateral li {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          padding: 10px 18px;
+          transition: background 0.2s;
+        }
+        #menuLateral li:hover {
+          background: #444;
+          color: #fff;
+        }
+        #menuLateral li:active {
+          background: #222;
+        }
+        .menu-list-icon {
+          width: 28px;
+          height: 22px;
+          object-fit: contain;
+          display: block;
+        }
+        .file-mapping { background: #fff; padding: 10px 20px; margin-bottom: 10px; border-bottom: 1px solid #eee; }
+        .container { max-width: 1260px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px #0001; padding: 24px; }
+        .row { margin-bottom: 18px; }
+        .button, .button-2 {
+            background: #2196f3; color: #fff; border: none; border-radius: 5px; padding: 8px 18px; margin: 2px;
+            cursor: pointer; font-size: 15px; transition: background 0.2s;
+        }
+        .button-2 { background: hsl(197, 96%, 48%); }
+        .button-2.alert { background: #f44336; }
+        .button-2.edit { background: #4caf50; }
+        .button-2.delete { background: #f44336; }
+        .button-2:active, .button:active { opacity: 0.8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+        th, td { border: 1px solid #eee; padding: 8px 6px; text-align: left; }
+        th { background: #f5f5f5; text-align: center;}
+        td.text-center { text-align: center; }
+        .color-box { display: inline-block; width: 28px; height: 18px; border-radius: 4px; border: 1px solid #ccc; }
+        .color-code-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        /* Cambia el diseño de los items de color para que el número esté superpuesto arriba */
+.color-code-item {
+    width: 35px;
+    height: 22px;
+    border-radius: 0;
+    border: 1px solid #888;
+    margin-right: 2px;
+    display: inline-block;
+    position: relative;
+    background: transparent;
+    margin-top: 10px; /* espacio para el número arriba */
+}
+.color-code-item .color-label {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    border: 1px solid #888;
+    border-radius: 3px;
+    font-size: 12px;
+    padding: 0 2px;
+    height: 18px;
+    min-width: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    box-shadow: 0 1px 2px #0002;
+    font-weight: bold;
+}
+        .modal-bg {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.25); align-items: center; justify-content: center; z-index: 9999;
+        }
+        .modal {
+            background: #fff;
+            padding: 28px 24px 18px 24px;
+            border-radius: 10px;
+            min-width: 520px;
+            box-shadow: 0 2px 20px #0002;
+        }
+        .modal-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 18px;
+        }
+        .modal-form-grid label {
+            margin-bottom: 2px;
+            font-size: 15px;
+        }
+        .modal-form-grid input,
+        .modal-form-grid select {
+            width: 100%;
+            padding: 6px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+        .modal-actions {
+            text-align: right;
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .modal-actions.center {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .busqueda-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 28px 0 18px 0;
+        }
+        #busqueda {
+            width: 340px;
+            max-width: 90vw;
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1.5px solid #05acee;
+            font-size: 1.15rem;
+            box-shadow: 0 2px 8px #0001;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+            background: #fafdff;
+        }
+        #busqueda:focus {
+            border: 2px solid #2196f3;
+            box-shadow: 0 4px 16px #2196f322;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 8px; }
+            table, thead, tbody, th, td, tr { font-size: 13px; }
+            .modal { min-width: 90vw; }
+            .modal-form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Cabecera fija -->
+    <div class="top-bar">
+        <img src="img/logo.png" alt="Logo" style="height:42px;">
+        <div style="position:relative; display:inline-block; margin-left:18px;">
+            <button id="menuBtn">
+                <img src="img/menu_icono.svg" alt="Menú" class="menu-icon">
+            </button>
+            <ul id="menuLateral">
+                <li id="mapaItem">
+                    <img src="img/menu_mapa.png" alt="Mapa" class="menu-list-icon">
+                    <span>Mapa</span>
+                </li>
+                <li id="usuariosItem">
+                    <img src="img/menu_usuario.png" alt="Usuarios" class="menu-list-icon">
+                    <span>Usuarios</span>
+                </li>
+                <li id="fibraItem">
+                    <img src="img/menu_fibra.png" alt="Tipos de cables" class="menu-list-icon">
+                    <span>Tipos de cables</span>
+                </li>
+
+                <li id="coloresItem">
+                    <img src="img/menu_colores.png" alt="Códigos de color" class="menu-list-icon">
+                    <span>Códigos de color</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <article class="file-mapping">
+        <span>Inicio / Código de colores / Gerencia de códigos de colores</span>
+    </article>
+    <div class="container">
+        <div style="display: flex; gap: 18px; margin-bottom: 18px;">
+            <button class="button-2" onclick="abrirModalColorCode()" style="flex:1; max-width: 50%;">Nuevo código de colores</button>
+            <input type="text" id="busqueda" placeholder="Busca..." oninput="renderTablaColorCodes()" style="flex:1; max-width: 50%; padding: 8px 16px; border-radius: 30px; border: 1.5px solid #05acee; font-size: 1.15rem; box-shadow: 0 2px 8px #0001; outline: none; background: #fafdff;">
+        </div>
+        <div id="msg" class=""></div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Colores de tubo</th>
+                    <th>Colores de fibra</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaColorCodes"></tbody>
+        </table>
+    </div>
+
+    <!-- Modal de agregar/editar código de colores -->
+    <div class="modal-bg" id="modal-bg-colorcode">
+        <div class="modal" style="padding:0;min-width:600px;">
+            <div style="padding:8px 16px;font-size:18px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;font-weight:bold;">                <span id="modal-titulo-colorcode">Editar código de colores</span>
+                <button type="button" onclick="cerrarModalColorCode()" style="background:transparent;border:none;font-size:20px;color:#fff;cursor:pointer;">&#10006;</button>
+            </div>
+            <form id="formColorCode" onsubmit="guardarColorCode(event)" style="padding:24px 24px 18px 24px;">
+                <input type="hidden" id="colorCodeId">
+                <label style="display:block;margin-bottom:16px;">Nombre:
+                    <input id="colorCodeNombre" required style="width:99%;margin-top:4px;height:30px;">
+                </label>
+                <div style="display: flex; gap: 18px;">
+                    <fieldset style="flex: 1; min-width: 0; margin-bottom: 0;">
+                        <legend style="font-weight:bold;">Tubos : <span id="numTubosLabel">1</span></legend>
+                        <div style="display:flex;align-items:flex-start;gap:12px;">
+                            <div id="colorCodeTubos" style="display:grid;grid-template-columns:repeat(12,28px);gap:8px 8px;"></div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <button type="button" class="button-2" style="padding:2px 8px;" onclick="modificarCantidad('tubos',1)">&#43;</button>
+                                <button type="button" class="button-2 alert" style="padding:2px 8px;" onclick="modificarCantidad('tubos',-1)">&#10006;</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset style="flex: 1; min-width: 0; margin-bottom: 0;">
+                        <legend style="font-weight:bold;">Fibras : <span id="numFibrasLabel">1</span></legend>
+                        <div style="display:flex;align-items:flex-start;gap:12px;">
+                            <div id="colorCodeFibras" style="display:grid;grid-template-columns:repeat(12,28px);gap:8px 8px;"></div>
+                            <div style="display:flex;flex-direction:column;gap:6px;">
+                                <button type="button" class="button-2" style="padding:2px 8px;" onclick="modificarCantidad('fibras',1)">&#43;</button>
+                                <button type="button" class="button-2 alert" style="padding:2px 8px;" onclick="modificarCantidad('fibras',-1)">&#10006;</button>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+                <hr>
+                <div class="modal-actions">
+                    <button type="submit" class="button-2">Confirmar</button>
+                    <button type="button" class="button-2 alert" onclick="cerrarModalColorCode()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación de eliminación -->
+    <div class="modal-bg" id="modal-confirm-bg-colorcode" style="display:none;">
+      <div class="modal" style="max-width:350px;text-align:center;">
+        <h3 style="margin-bottom:18px;">¿Eliminar este código de colores?</h3>
+          <div class="modal-actions center">
+          <button id="btnConfirmarEliminarColorCode" class="button-2 alert">Eliminar</button>
+          <button onclick="cerrarModalConfirmColorCode()" class="button-2">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    // CRUD para códigos de colores con LocalStorage
+    let colorCodes = [];
+    let editColorCodeIdx = null;
+    let idxColorCodeAEliminar = null;
+
+    function cargarColorCodes() {
+        colorCodes = JSON.parse(localStorage.getItem('colorCodes') || '[]');
+        renderTablaColorCodes();
+    }
+
+    function renderTablaColorCodes() {
+        const tbody = document.getElementById('tablaColorCodes');
+        const busqueda = document.getElementById('busqueda').value.toLowerCase();
+        tbody.innerHTML = '';
+        let encontrados = 0;
+        colorCodes.forEach((c, i) => {
+            if (
+                c.nombre.toLowerCase().includes(busqueda)
+            ) {
+                encontrados++;
+                tbody.innerHTML += `
+                <tr>
+                    <td>${c.nombre}</td>
+                    <td>
+                        <div class="color-code-box">
+                            ${c.tubos.map((color, idx) => `
+                                <div class="color-code-item" style="background:${color};">
+                                    <span class="color-label">${idx+1}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="color-code-box">
+                            ${c.fibras.map((color, idx) => `
+                                <div class="color-code-item" style="background:${color};">
+                                    <span class="color-label">${idx+1}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="text-center">
+                        <button class="button-2 edit" onclick="editarColorCode(${i})" title="Editar">✏️</button>
+                        <button class="button-2 delete" onclick="confirmarEliminarColorCode(${i})" title="Eliminar">🗑️</button>
+                    </td>
+                </tr>
+                `;
+            }
+        });
+        if (encontrados === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center">No se encontraron resultados</td></tr>`;
+        }
+    }
+
+    const PRESET_COLORS = [
+        "#0000ff", "#ffb300", "#388e3c", "#8d2323",
+        "#888", "#fff", "#f00", "#000",
+        "#ff0", "#e573e5", "#ffcdd2", "#00e5ff"
+    ];
+
+    function drawColorInputs(tipo, presetColors = null) {
+        let num = 1;
+        let contenedor = null;
+        let label = null;
+        if (tipo === 'tubos') {
+            num = window.numTubos || 1;
+            contenedor = document.getElementById('colorCodeTubos');
+            label = document.getElementById('numTubosLabel');
+        } else {
+            num = window.numFibras || 1;
+            contenedor = document.getElementById('colorCodeFibras');
+            label = document.getElementById('numFibrasLabel');
+        }
+        label.textContent = num;
+        contenedor.innerHTML = '';
+        for (let i = 0; i < num; i++) {
+            let color = (presetColors && presetColors[i]) ? presetColors[i] : null;
+            const safeColor = color ? normalizeColor(color) : '#ffffff';
+
+            let wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.alignItems = 'center';
+
+            let legend = document.createElement('div');
+            legend.textContent = i+1;
+            legend.style.border = '1px #8E8E8E solid';
+            legend.style.fontSize = '16px';
+            legend.style.textAlign = 'center';
+            legend.style.width = '28px';
+            legend.style.marginBottom = '2px';
+            wrapper.appendChild(legend);
+
+            let input = document.createElement('input');
+            input.type = 'color';
+            input.value = safeColor;
+            input.style.width = '28px';
+            input.style.height = '28px';
+            input.style.display = 'none';
+
+            let colorBox = document.createElement('div');
+            colorBox.style.width = '28px';
+            colorBox.style.height = '28px';
+            colorBox.style.border = '1px solid #ccc';
+            colorBox.style.background = safeColor;
+            colorBox.style.cursor = 'pointer';
+            colorBox.title = 'Haz clic para elegir color';
+
+            colorBox.onclick = function(e) {
+                e.preventDefault();
+                colorPickerDropdown(input, i, tipo, colorBox);
+            };
+            wrapper.oncontextmenu = function(e) {
+                e.preventDefault();
+                colorPickerDropdown(input, i, tipo, colorBox);
+            };
+
+            input.oninput = function() {
+                colorBox.style.background = input.value;
+            };
+
+            wrapper.appendChild(colorBox);
+            wrapper.appendChild(input);
+
+            wrapper.oncontextmenu = function(e) {
+                e.preventDefault();
+                colorPickerDropdown(input, i, tipo, colorBox);
+            };
+            wrapper.ondblclick = function(e) {
+                e.preventDefault();
+                colorPickerDropdown(input, i, tipo, colorBox);
+            };
+
+            contenedor.appendChild(wrapper);
+        }
+    }
+
+    function colorPickerDropdown(input, idx, tipo, colorBox) {
+        let dropdown = document.createElement('div');
+        dropdown.style.position = 'absolute';
+        dropdown.style.background = '#fff';
+        dropdown.style.border = '1px solid #ccc';
+        dropdown.style.padding = '4px';
+        dropdown.style.display = 'grid';
+        dropdown.style.gridTemplateColumns = 'repeat(4, 24px)';
+        dropdown.style.gap = '4px';
+        dropdown.style.zIndex = 99999;
+        dropdown.style.boxShadow = '0 2px 8px #0002';
+
+        PRESET_COLORS.forEach(color => {
+            let btn = document.createElement('button');
+            btn.type = 'button';
+            btn.style.background = color;
+            btn.style.width = '24px';
+            btn.style.height = '24px';
+            btn.style.border = '1px solid #888';
+            btn.style.cursor = 'pointer';
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                const normalized = normalizeColor(color);
+                colorBox.style.background = normalized;
+                input.value = normalized;
+                dropdown.remove();
+            };
+            dropdown.appendChild(btn);
+        });
+
+        // Opción para abrir el color picker nativo
+        let otros = document.createElement('button');
+        otros.type = 'button';
+        otros.textContent = 'Otros...';
+        otros.style.gridColumn = 'span 4';
+        otros.style.background = '#eee';
+        otros.style.border = '1px solid #888';
+        otros.style.cursor = 'pointer';
+        otros.onclick = function(e) {
+            e.stopPropagation();
+            input.style.display = 'block';
+            input.focus();
+            input.click();
+            dropdown.remove();
+
+            // Oculta el input solo después de cerrar el selector (evento change)
+            const hideInput = () => {
+                input.style.display = 'none';
+                input.removeEventListener('change', hideInput);
+            };
+            input.addEventListener('change', hideInput);
+        };
+        dropdown.appendChild(otros);
+
+        // Posiciona el menú debajo del colorBox
+        let rect = colorBox.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + 2) + 'px';
+        document.body.appendChild(dropdown);
+
+        setTimeout(() => {
+            document.addEventListener('mousedown', function handler(e){
+                if (!dropdown.contains(e.target)) {
+                    dropdown.remove();
+                    document.removeEventListener('mousedown', handler);
+                }
+            });
+        }, 10);
+    }
+
+    window.numTubos = 1;
+    window.numFibras = 1;
+
+    function modificarCantidad(tipo, delta) {
+        if (tipo === 'tubos') {
+            // Guarda los colores actuales y normaliza vacíos a blanco
+            const actuales = [];
+            document.querySelectorAll('#colorCodeTubos input[type="color"]').forEach(input => {
+                actuales.push(input.value ? normalizeColor(input.value) : '#ffffff');
+            });
+            window.numTubos = Math.max(1, (window.numTubos || 1) + delta);
+            drawColorInputs('tubos', actuales);
+        } else {
+            const actuales = [];
+            document.querySelectorAll('#colorCodeFibras input[type="color"]').forEach(input => {
+                actuales.push(input.value ? normalizeColor(input.value) : '#ffffff');
+            });
+            window.numFibras = Math.max(1, (window.numFibras || 1) + delta);
+            drawColorInputs('fibras', actuales);
+        }
+    }
+
+    function abrirModalColorCode(idx = null) {
+        document.getElementById('modal-bg-colorcode').style.display = 'flex';
+        document.getElementById('formColorCode').reset();
+        document.getElementById('colorCodeId').value = '';
+        window.numTubos = 1;
+        window.numFibras = 1;
+        document.getElementById('modal-titulo-colorcode').textContent = idx === null ? 'Nuevo código de colores' : 'Editar código de colores';
+
+        if (idx !== null) {
+            editColorCodeIdx = idx;
+            const c = colorCodes[idx];
+            document.getElementById('colorCodeId').value = idx;
+            document.getElementById('colorCodeNombre').value = c.nombre;
+            window.numTubos = c.tubos.length;
+            window.numFibras = c.fibras.length;
+            drawColorInputs('tubos', c.tubos);
+            drawColorInputs('fibras', c.fibras);
+        } else {
+            editColorCodeIdx = null;
+            drawColorInputs('tubos');
+            drawColorInputs('fibras');
+        }
+    }
+
+    function cerrarModalColorCode() {
+        document.getElementById('modal-bg-colorcode').style.display = 'none';
+    }
+
+    function cerrarModalConfirmColorCode() {
+      document.getElementById('modal-confirm-bg-colorcode').style.display = 'none';
+    }
+
+    function guardarColorCode(e) {
+        e.preventDefault();
+        const nombre = document.getElementById('colorCodeNombre').value;
+        const tubos = [];
+        const fibras = [];
+        document.querySelectorAll('#colorCodeTubos input[type="color"]').forEach(input => tubos.push(normalizeColor(input.value)));
+        document.querySelectorAll('#colorCodeFibras input[type="color"]').forEach(input => fibras.push(normalizeColor(input.value)));
+        const colorCode = { nombre, tubos, fibras };
+        if (document.getElementById('colorCodeId').value === '') {
+            colorCodes.push(colorCode);
+        } else {
+            colorCodes[document.getElementById('colorCodeId').value] = colorCode;
+        }
+        localStorage.setItem('colorCodes', JSON.stringify(colorCodes));
+        cerrarModalColorCode();
+        renderTablaColorCodes();
+    }
+
+    function editarColorCode(idx) {
+        abrirModalColorCode(idx);
+    }
+
+    function confirmarEliminarColorCode(idx) {
+        idxColorCodeAEliminar = idx;
+        document.getElementById('modal-confirm-bg-colorcode').style.display = 'flex';
+    }
+
+    function eliminarColorCode() {
+        if (idxColorCodeAEliminar !== null) {
+            colorCodes.splice(idxColorCodeAEliminar, 1);
+            localStorage.setItem('colorCodes', JSON.stringify(colorCodes));
+            renderTablaColorCodes();
+            cerrarModalConfirmColorCode();
+            idxColorCodeAEliminar = null;
+        }
+    }
+
+    document.getElementById('btnConfirmarEliminarColorCode').onclick = eliminarColorCode;
+
+    // Cerrar modal al hacer click fuera
+    window.onclick = function(e) {
+        if (e.target == document.getElementById('modal-bg-colorcode')) cerrarModalColorCode();
+        if (e.target == document.getElementById('modal-confirm-bg-colorcode')) cerrarModalConfirmColorCode();
+    }
+
+    // Menú lateral funcional
+    document.getElementById('menuBtn').onclick = function(e) {
+        e.stopPropagation();
+        const menu = document.getElementById('menuLateral');
+        menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    };
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('menuLateral');
+        if (menu.style.display === 'block' && !menu.contains(e.target) && e.target.id !== 'menuBtn') {
+            menu.style.display = 'none';
+        }
+    });
+    // Redirecciones del menú
+    document.getElementById('mapaItem').onclick = function() {
+        window.location.href = 'v2 copy.html';
+    };
+    document.getElementById('fibraItem').onclick = function() {
+        window.location.href = 'tipos_cables.html';
+    };
+    document.getElementById('usuariosItem').onclick = function() {
+        window.location.href = 'users.html';
+    };
+    // Nuevo manejador
+    document.getElementById('coloresItem').onclick = function() {
+        window.location.href = 'cod_colors.html';
+    };    
+
+    cargarColorCodes();
+
+    function normalizeColor(color) {
+        // Si es #fff, #000, etc, conviértelo a #ffffff, #000000, etc
+        if (/^#[0-9a-fA-F]{3}$/.test(color)) {
+            return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+        }
+        // Si es válido de 7 caracteres, lo deja igual
+        if (/^#[0-9a-fA-F]{6}$/.test(color)) {
+            return color;
+        }
+        // Si está vacío o no válido, retorna blanco
+        return '#ffffff';
+    }
+    </script>
+</body>
+</html>

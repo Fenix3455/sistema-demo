@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Importar KML con estilo tipo Tomodat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+
+  <!-- toGeoJSON -->
+  <script src="https://unpkg.com/togeojson"></script>
+
+  <style>
+    #map { height: 90vh; width: 100%; }
+    .header { padding: 10px; background: #f4f4f4; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <button onclick="document.getElementById('kmlInput').click()">📂 Importar KML</button>
+  <input type="file" id="kmlInput" accept=".kml" style="display:none;" />
+</div>
+
+<div id="map"></div>
+
+<script>
+  const callejero = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+  const satelital = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+  const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+  const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png');
+
+  const map = L.map('map', {
+    center: [-11.070093, -77.600411],
+    zoom: 15,
+    layers: [satelital]
+  });
+
+  const baseMaps = {
+    "🗺️ Callejero": callejero,
+    "🛰️ Satelital": satelital,
+    "🌙 Oscuro": dark,
+    "☀️ Claro": light
+  };
+  L.control.layers(baseMaps).addTo(map);
+
+  const markers = L.markerClusterGroup();
+  map.addLayer(markers);
+
+  const icons = {
+    poste: new L.Icon({
+      iconUrl: 'img/poste.svg',
+      iconSize: [32, 32], iconAnchor: [10, 32], popupAnchor: [0, -30]
+    }),
+    caja: new L.Icon({
+      iconUrl: 'https://maps.google.com/mapfiles/kml/paddle/blu-circle.png',
+      iconSize: [32, 32], iconAnchor: [10, 32], popupAnchor: [0, -30]
+    }),
+    empalme: new L.Icon({
+      iconUrl: 'https://maps.google.com/mapfiles/kml/paddle/red-circle.png',
+      iconSize: [32, 32], iconAnchor: [10, 32], popupAnchor: [0, -30]
+    }),
+    mufa: new L.Icon({
+      iconUrl: 'img/mufa.svg',
+      iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30]
+    }),
+    puntoAcceso: new L.Icon({
+      iconUrl: 'img/cajax8.svg',
+      iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30]
+    }),
+    usuario: new L.Icon({
+      iconUrl: 'img/user.svg',
+      iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30]
+    }),
+    default: new L.Icon.Default()
+  };
+
+  function isValidCoords(coords) {
+    return Array.isArray(coords.flat(Infinity)) &&
+           coords.flat(Infinity).every(c => typeof c === 'number' && !isNaN(c));
+  }
+
+  document.getElementById('kmlInput').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (!file || !file.name.endsWith('.kml')) {
+      alert("Por favor selecciona un archivo KML válido.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parser = new DOMParser();
+        const kml = parser.parseFromString(e.target.result, 'text/xml');
+        const geojson = toGeoJSON.kml(kml);
+
+        const pointFeatures = geojson.features.filter(f =>
+          f.geometry?.type === 'Point' && isValidCoords(f.geometry.coordinates)
+        );
+
+        const lineFeatures = geojson.features.filter(f =>
+          (f.geometry?.type === 'LineString' || f.geometry?.type === 'MultiLineString') &&
+          isValidCoords(f.geometry.coordinates)
+        );
+
+        const pointLayer = L.geoJSON({ type: "FeatureCollection", features: pointFeatures }, {
+          pointToLayer: function (feature, latlng) {
+            const name = feature.properties.name || "";
+            const lower = name.toLowerCase();
+            let icon = icons.default;
+
+            if (lower.includes("mufa")) icon = icons.mufa;
+            else if (lower.includes("punto de acceso")) icon = icons.puntoAcceso;
+            else if (lower.includes("poste")) icon = icons.poste;
+            else if (lower.includes("caja")) icon = icons.caja;
+            else if (lower.includes("empalme") || lower.includes("conexion")) icon = icons.empalme;
+            else if (/^[A-ZÑ ]+$/.test(name) && name.trim().split(/\s+/).length >= 2) {
+              icon = icons.usuario;
+            }
+
+            const marker = L.marker(latlng, { icon });
+            marker.bindPopup(name || "Sin nombre");
+            return marker;
+          }
+        });
+
+        const lineLayer = L.geoJSON({ type: "FeatureCollection", features: lineFeatures }, {
+          style: {
+            color: 'yellow',
+            weight: 3,
+            opacity: 0.9
+          }
+        });
+
+        markers.clearLayers();
+        markers.addLayer(pointLayer);
+        map.addLayer(lineLayer);
+
+        const bounds = L.featureGroup([pointLayer, lineLayer]).getBounds();
+        map.fitBounds(bounds);
+
+      } catch (err) {
+        console.error("Error al procesar el archivo KML:", err);
+        alert("El archivo KML contiene datos no compatibles o está corrupto.");
+      }
+    };
+
+    reader.readAsText(file);
+  });
+</script>
+
+</body>
+</html>

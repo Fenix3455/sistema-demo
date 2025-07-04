@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    body {
+      background: #171717;
+      min-height: 100vh;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .login-container {
+      display: flex;
+      align-items: center;      /* Centra verticalmente ambos elementos */
+      justify-content: center;
+      gap: 2em;
+      height: 100vh;           /* Ocupa toda la altura de la pantalla */
+    }
+
+    .login-img {
+      width: 320px;    /* Ajusta el tamaño según tu preferencia */
+      height: auto;
+      border-radius: 18px; /* Opcional: bordes redondeados */
+      box-shadow: 0 2px 16px #0005; /* Opcional: sombra */
+      background: #222;
+    }
+
+    .form {
+      width: 350px;
+      margin: 2em auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-left: 2em;
+      padding-right: 2em;
+      padding-bottom: 0.4em;
+      background-color: #171717;
+      border-radius: 25px;
+      transition: .4s ease-in-out;
+      border: 1px solid transparent; /* Sin borde visible por defecto */
+    }
+
+    .form:hover,
+    .form:focus-within {
+      border: 1px solid #222; /* O el color que prefieras */
+      box-shadow: 0 0 0 2px #2222; /* Opcional: leve sombra al enfocar */
+    }
+
+    .header-login {
+      display: flex;
+      align-items: center;
+      margin-top: 2em;
+      margin-bottom: 2em;
+      width: 100%;
+    }
+
+    #heading {
+      margin: 0;
+      color: rgb(255, 255, 255);
+      font-size: 1.2em;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      flex: 1;
+      text-align: left;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5em;
+      border-radius: 25px;
+      padding: 0.6em;
+      border: none;
+      outline: none;
+      color: white;
+      background-color: #171717;
+      box-shadow: inset 2px 5px 10px rgb(5, 5, 5);
+    }
+
+    .input-icon {
+      height: 1.3em;
+      width: 1.3em;
+      fill: white;
+    }
+
+    .input-field {
+      background: none;
+      border: none;
+      outline: none;
+      width: 100%;
+      color: #d3d3d3;
+    }
+
+    .form .btn {
+      display: flex;
+      justify-content: center;
+      flex-direction: row;
+      margin-top: 2.5em;
+      margin-bottom: 0; /* Más cerca del mensaje */
+    }
+
+    .button1 {
+      padding: 0.5em;
+      padding-left: 1.1em;
+      padding-right: 1.1em;
+      border-radius: 5px;
+      margin-right: 0.5em;
+      border: none;
+      outline: none;
+      transition: .4s ease-in-out;
+      background-color: #252525;
+      color: white;
+      font-weight: bold;
+    }
+
+    .button1:hover {
+      background-color: black;
+      color: white;
+    }
+
+    .button2 {
+      padding: 0.5em;
+      padding-left: 2.3em;
+      padding-right: 2.3em;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+      transition: .4s ease-in-out;
+      background-color: #252525;
+      color: white;
+    }
+
+    .button2:hover {
+      background-color: black;
+      color: white;
+    }
+
+    .button3 {
+      margin-bottom: 3em;
+      padding: 0.5em;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+      transition: .4s ease-in-out;
+      background-color: #252525;
+      color: white;
+    }
+
+    .button3:hover {
+      background-color: red;
+      color: white;
+    }
+
+    .toggle-password {
+      display: flex;
+      align-items: center;
+    }
+
+    .error-msg {
+      opacity: 0;
+      transition: opacity 0.5s;
+      color: #fff;
+      background: #d32f2f;
+      border-radius: 8px;
+      padding: 0.3em 1em;
+      margin: 0 auto;
+      margin-top: 0.1em; /* Más cerca del botón */
+      margin-bottom: 0.5em;
+      text-align: center;
+      width: 80%;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      pointer-events: none;
+      position: relative;
+    }
+    .error-msg.show {
+      opacity: 1;
+    }
+
+    .loader {
+      transform: rotateZ(45deg);
+      perspective: 1000px;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      color: #d32f2f;           /* Rojo elegante */
+      position: relative;
+      display: inline-block;
+      background: none;
+    }
+    .loader:before,
+    .loader:after {
+      content: '';
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: inherit;
+      height: inherit;
+      border-radius: 50%;
+      transform: rotateX(70deg);
+      animation: 1s spin linear infinite;
+    }
+    .loader:after {
+      color: #bdbdbd;           /* Gris claro elegante */
+      transform: rotateY(70deg);
+      animation-delay: .4s;
+    }
+    @keyframes spin {
+      0%,100% { box-shadow: .2em 0px 0 0px currentcolor; }
+      12%    { box-shadow: .2em .2em 0 0 currentcolor; }
+      25%    { box-shadow: 0 .2em 0 0px currentcolor; }
+      37%    { box-shadow: -.2em .2em 0 0 currentcolor; }
+      50%    { box-shadow: -.2em 0 0 0 currentcolor; }
+      62%    { box-shadow: -.2em -.2em 0 0 currentcolor; }
+      75%    { box-shadow: 0px -.2em 0 0 currentcolor; }
+      87%    { box-shadow: .2em -.2em 0 0 currentcolor; }
+    }
+
+    .logo-login {
+      display: block;
+      margin: 0 auto 1em auto;
+      width: 70px;      /* Ajusta el tamaño según tu preferencia */
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-login {
+      display: flex;
+      align-items: center;
+      margin-top: 2em;
+      margin-bottom: 2em;
+      width: 100%;
+    }
+
+    .logo-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .logo-inline {
+      width: 48px;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <!-- <img src="imagen_login.png" alt="Imagen Login" class="login-img"> -->
+    <form class="form" id="loginForm" autocomplete="off">
+      <div class="header-login">
+        <p id="heading">Login</p>
+      </div>
+      <div class="field">
+        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M6.5 0a.5.5 0 0 0-.5.5V1H2.5A1.5 1.5 0 0 0 1 2.5v12A1.5 1.5 0 0 0 2.5 16h11a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 13.5 1H10V.5a.5.5 0 0 0-1 0V1H7V.5a.5.5 0 0 0-.5-.5zM2.5 2h11A.5.5 0 0 1 14 2.5V3h-1v1h1v1h-1v1h1v1h-1v1h1v1h-1v1h1v1h-1v1h1v.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V14h1v-1H2v-1h1v-1H2v-1h1v-1H2v-1h1V5H2V4h1V3H2v-.5A.5.5 0 0 1 2.5 2zm1 2v1h1V4h-1zm0 2v1h1V6h-1zm0 2v1h1V8h-1zm0 2v1h1v-1h-1zm0 2v1h1v-1h-1zm2-8v1h1V4h-1zm0 2v1h1V6h-1zm0 2v1h1V8h-1zm0 2v1h1v-1h-1zm0 2v1h1v-1h-1zm2-8v1h1V4h-1zm0 2v1h1V6h-1zm0 2v1h1V8h-1zm0 2v1h1v-1h-1zm0 2v1h1v-1h-1zm2-8v1h1V4h-1zm0 2v1h1V6h-1zm0 2v1h1V8h-1zm0 2v1h1v-1h-1zm0 2v1h1v-1h-1z"/>
+        </svg>
+        <input id="empresa" autocomplete="off" placeholder="Empresa" class="input-field" type="text">
+      </div>
+      <div class="field">
+        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        </svg>
+        <input id="usuario" autocomplete="off" placeholder="Usuario" class="input-field" type="text">
+      </div>
+      <div class="field">
+        <svg class="input-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path>
+        </svg>
+        <input id="password" placeholder="Contraseña" class="input-field" type="password">
+        <span class="toggle-password" onclick="togglePassword()" style="cursor:pointer; margin-left: -2em;">
+          <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#fff" viewBox="0 0 16 16">
+            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zm-8 4a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>
+          </svg>
+        </span>
+      </div>
+      <div class="btn" style="justify-content: center;">
+        <button class="button1" id="loginBtn" type="submit"><b>Ingresar</b></button>
+        <div class="loader" id="loader" style="display:none; margin-top:0.2em;"></div>
+      </div>
+      <div id="errorMsg" class="error-msg">Credenciales Incorrectos</div>
+    </form>
+  </div>
+  <script>
+    function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eyeIcon');
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = `<path d="M13.359 11.238l1.42 1.42a.75.75 0 1 1-1.06 1.06l-1.42-1.42A7.03 7.03 0 0 1 8 13.5c-5 0-8-5.5-8-5.5a15.6 15.6 0 0 1 2.354-2.888l-1.42-1.42a.75.75 0 1 1 1.06-1.06l1.42 1.42A7.03 7.03 0 0 1 8 2.5c5 0 8 5.5 8 5.5a15.6 15.6 0 0 1-2.354 2.888zM8 4.5a3.5 3.5 0 0 0-2.45 5.95l4.9-4.9A3.5 3.5 0 0 0 8 4.5zm0 7a3.5 3.5 0 0 0 2.45-5.95l-4.9 4.9A3.5 3.5 0 0 0 8 11.5z"/>`;
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = `<path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zm-8 4a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/>`;
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const empresa = document.getElementById('empresa').value.trim();
+      const usuario = document.getElementById('usuario').value.trim();
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const loader = document.getElementById('loader');
+
+      // Validar que todos los campos estén llenos
+      if (!empresa || !usuario || !password) {
+        showError('Por favor, complete todos los campos.');
+        return;
+      }
+
+      if (empresa === 'forza' && usuario === 'user' && password === '1234') {
+        loginBtn.style.display = 'none';
+        loader.style.display = 'inline-block';
+        const tiempos = [4000, 5000, 6000];
+        const tiempo = tiempos[Math.floor(Math.random() * tiempos.length)];
+        setTimeout(() => {
+          window.location.href = 'v2 copy.html';
+        }, tiempo);
+      } else {
+        showError('Credenciales Incorrectos');
+      }
+    });
+
+    function showError(msgText) {
+      const msg = document.getElementById('errorMsg');
+      msg.textContent = msgText;
+      msg.classList.add('show');
+      setTimeout(() => {
+        msg.classList.remove('show');
+        msg.textContent = 'Credenciales Incorrectos';
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
