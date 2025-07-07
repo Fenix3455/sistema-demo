@@ -192,6 +192,32 @@
             border: 2px solid #2196f3;
             box-shadow: 0 4px 16px #2196f322;
         }
+        /* Estilos para el botón de cerrar sesión */
+.logout-btn {
+  background: #e53935;
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  margin-left: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.logout-btn:hover {
+  background: #b71c1c;
+}
+.top-bar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
         @media (max-width: 700px) {
             .container { padding: 8px; }
             table, thead, tbody, th, td, tr { font-size: 13px; }
@@ -227,6 +253,10 @@
                     <span>Códigos de color</span>
                 </li>
             </ul>
+        </div>
+        <!-- Botón cerrar sesión a la derecha -->
+        <div class="top-bar-actions">
+            <button id="logoutBtn" class="logout-btn" title="Cerrar sesión">✖</button>
         </div>
     </div>
     <article class="file-mapping">

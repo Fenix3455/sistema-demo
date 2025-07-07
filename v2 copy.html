@@ -186,8 +186,9 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background: #ffffff;
-    padding: 24px;
-    width: 450px;
+    padding: 20px 20px;   /* Menos padding = menos altura */
+    width: 280px;         /* Opcional: más angosto */
+    height: 110px; 
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     z-index: 9999;
@@ -625,22 +626,33 @@
 </div>
 
 <script>
-  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
-  const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+// --- MAPA BASE PERSISTENTE EN LOCALSTORAGE ---
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
 
-  const map = L.map('map', {
-    center: [-11.070093, -77.600411],
-    zoom: 14,
-    layers: [esri]
-  });
+// Leer preferencia de mapa base
+let tipoMapaBase = localStorage.getItem('tipoMapaBase');
+let mapaBase = (tipoMapaBase === 'callejero') ? osm : esri; // Por defecto satelital
 
-  map.zoomControl.setPosition('bottomright');
+const map = L.map('map', {
+  center: [-11.070093, -77.600411],
+  zoom: 14,
+  layers: [mapaBase]
+});
 
-  L.control.layers(
-    { "🗺️ Callejero": osm, "🛰️ Satelital": esri },
-    null,
-    { position: 'topright' }
-  ).addTo(map);
+map.zoomControl.setPosition('bottomright');
+
+const baseMaps = { "🗺️ Callejero": osm, "🛰️ Satelital": esri };
+L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+
+// Guardar selección de mapa base en localStorage
+map.on('baselayerchange', function(e) {
+  if (e.name.includes('Callejero')) {
+    localStorage.setItem('tipoMapaBase', 'callejero');
+  } else {
+    localStorage.setItem('tipoMapaBase', 'satelital');
+  }
+});
 
   // Después de inicializar el mapa:
   const markerCluster = L.markerClusterGroup();
@@ -730,7 +742,7 @@ addClusterTooltip(clusterOficinas, "Oficina");
       iconAnchor: [16, 32],
       popupAnchor: [0, -30]
     });
-    const marker = L.marker(e.latlng, { icon, draggable: false });
+    const marker = L.marker(e.latlng, { icon, draggable: true });
 
     // Agregar el marcador al cluster correspondiente
     if (tipoSeleccionado === "Caja") {
@@ -744,6 +756,31 @@ addClusterTooltip(clusterOficinas, "Oficina");
     const punto = { name, tipo: tipoSeleccionado, marker };
     marker.bindTooltip(name, { direction: 'top', offset: [0, -10], sticky: true });
     marker.bindPopup(crearPopupPunto(punto));
+
+    // Evento para mover el marcador y actualizar líneas conectadas
+    marker.on('drag', function(e) {
+      const newLatLng = e.target.getLatLng();
+      punto.latlng = newLatLng;
+      // Actualiza todas las líneas conectadas a este punto
+      drawnLines.forEach(line => {
+        let changed = false;
+        line.latlngs = line.latlngs.map(ll => {
+          if (
+            Math.abs(ll.lat - e.oldLatLng.lat) < 1e-6 &&
+            Math.abs(ll.lng - e.oldLatLng.lng) < 1e-6
+          ) {
+            changed = true;
+            return newLatLng;
+          }
+          return ll;
+        });
+        if (changed) {
+          line.polyline.setLatLngs(line.latlngs);
+          saveLines();
+        }
+      });
+      saveMarkers();
+    });
 
     marker.on('click', (e) => {
       if (cableDibujando && cableLinea) {
@@ -764,40 +801,29 @@ addClusterTooltip(clusterOficinas, "Oficina");
     });
 
     markers.push(punto);
-    saveMarkers(); // <-- AGREGA ESTA LÍNEA
+    saveMarkers();
   });
 
-  function crearPopupPunto(punto) {
-    const latlng = punto.marker.getLatLng();
-    const div = document.createElement('div');
-    div.innerHTML = `
-      <strong>${punto.name}</strong><br>
-      <small>Coordenadas: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}</small><br>
-      <button class="editar-btn">✏️ Editar</button>
-      <button class="abrir-modal-btn">🖥️ Abrir modal</button>
-      <button class="eliminar-btn">🗑️ Eliminar</button>
-      <button class="mover-btn">🔀 Mover</button>
-    `;
-    return div;
-  }
- 
+// Cambia la función crearPopupPunto para eliminar el botón "Mover"
+function crearPopupPunto(punto) {
+  const latlng = punto.marker.getLatLng();
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <strong>${punto.name}</strong><br>
+    <small>Coordenadas: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}</small><br>
+    <div style="display: flex; justify-content: center; gap: 5px; margin-top: 8px;">
+      <button class="editar-btn" title="Editar">✏️</button>
+      <button class="abrir-modal-btn" title="Abrir modal">🖥️</button>
+      <button class="eliminar-btn" title="Eliminar">🗑️</button>
+    </div>
+  `;
+  return div;
+}
 
-
-    document.getElementById('fibraItem').onclick = () => {
-    if (drawing) return;
-    drawing = true;
-    const color = "#ff0000"; // Rojo por defecto
-    currentLine = L.polyline([], { color }).addTo(map);
-  
-    map.on('click', drawPoint);
-    map.on('dblclick', finishLine);
-  };
-
+// Evento para asignar funcionalidad a los botones del popup
 map.on('popupopen', function(e) {
   const marker = e.popup._source;
   const punto = markers.find(p => p.marker === marker);
- 
-
   if (!punto) return;
 
   const container = e.popup.getElement();
@@ -813,213 +839,37 @@ map.on('popupopen', function(e) {
   // Botón Eliminar
   const eliminarBtn = container.querySelector('.eliminar-btn');
   if (eliminarBtn) eliminarBtn.onclick = () => {
-    const currentZoom = map.getZoom();
-    const currentCenter = map.getCenter();
+    mostrarPopupEliminar(() => {
+      const currentZoom = map.getZoom();
+      const currentCenter = map.getCenter();
 
-    // Elimina del cluster específico
-    if (punto.tipo === "Caja") {
-      clusterCajas.removeLayer(punto.marker);
-    } else if (punto.tipo === "Mufa") {
-      clusterMufas.removeLayer(punto.marker);
-    } else if (punto.tipo === "Oficina") {
-      clusterOficinas.removeLayer(punto.marker);
-    }
-    // Elimina del cluster general (por si acaso)
-    markerCluster.removeLayer(punto.marker);
-
-    // Eliminar el marcador del mapa
-    map.removeLayer(marker);
-
-    // Eliminar de la lista de marcadores
-    markers = markers.filter(m => m.marker !== marker);
-
-    // Guardar cambios
-    saveMarkers();
-
-    // Restaurar vista anterior
-    map.setView(currentCenter, currentZoom);
-
-    // Cerrar el popup
-    map.closePopup();
-  };
-
-  // --- AQUÍ DEBE IR EL BLOQUE DEL BOTÓN MOVER, FUERA DEL IF DE ELIMINAR ---
-
-  const moverBtn = container.querySelector('.mover-btn');
-
-if (moverBtn) {
-  moverBtn.onclick = function() {
-    marker.closePopup();
-    moverBtn.disabled = true;
-    moverBtn.classList.add('blink');
-    moverBtn.textContent = "Haz doble click en el mapa...";
-
-    marker.setOpacity(0);
-    const oldLatLng = marker.getLatLng();
-
-    // --- NUEVO: Guarda los índices de los vértices conectados ---
-    const lineVertexMap = [];
-    drawnLines.forEach(line => {
-      const indices = [];
-      line.latlngs.forEach((ll, idx) => {
-        if (
-          Math.abs(ll.lat - oldLatLng.lat) < 1e-6 &&
-          Math.abs(ll.lng - oldLatLng.lng) < 1e-6
-        ) {
-          indices.push(idx);
-        }
-      });
-      if (indices.length > 0) {
-        lineVertexMap.push({ line, indices });
+      // Elimina del cluster específico
+      if (punto.tipo === "Caja") {
+        clusterCajas.removeLayer(punto.marker);
+      } else if (punto.tipo === "Mufa") {
+        clusterMufas.removeLayer(punto.marker);
+      } else if (punto.tipo === "Oficina") {
+        clusterOficinas.removeLayer(punto.marker);
       }
-    });
+      markerCluster.removeLayer(punto.marker);
 
-    let tempMarker = L.marker(oldLatLng, {
-      icon: marker.options.icon,
-      opacity: 1
-    }).addTo(map);
-    tempMarker._icon.classList.add('blink');
+      // Eliminar el marcador del mapa
+      map.removeLayer(marker);
 
-    function mouseMoveHandler(e) {
-      tempMarker.setLatLng(e.latlng);
+      // Eliminar de la lista de marcadores
+      markers = markers.filter(m => m.marker !== marker);
 
-      // ACTUALIZA EN TIEMPO REAL LAS LÍNEAS CONECTADAS usando los índices guardados
-      lineVertexMap.forEach(({ line, indices }) => {
-        const newLatLngs = line.latlngs.slice();
-        indices.forEach(idx => {
-          newLatLngs[idx] = e.latlng;
-        });
-        line.polyline.setLatLngs(newLatLngs);
-      });
-    }
-    map.on('mousemove', mouseMoveHandler);
-
-    moverDblClickHandler = function(ev) {
-      const newLatLng = ev.latlng;
-      marker.setLatLng(newLatLng);
-      punto.latlng = newLatLng;
+      // Guardar cambios en localStorage
       saveMarkers();
 
-      // ACTUALIZA LAS LÍNEAS CONECTADAS usando los índices guardados
-      lineVertexMap.forEach(({ line, indices }) => {
-        indices.forEach(idx => {
-          line.latlngs[idx] = newLatLng;
-        });
-        line.polyline.setLatLngs(line.latlngs);
-        saveLines();
-      });
+      // Restaurar vista anterior
+      map.setView(currentCenter, currentZoom);
 
-      map.off('mousemove', mouseMoveHandler);
-      map.off('dblclick', moverDblClickHandler);
-      map.removeLayer(tempMarker);
-      marker.setOpacity(1);
-      moverBtn.disabled = false;
-      moverBtn.classList.remove('blink');
-      moverBtn.textContent = "🔀 Mover";
-      marker.openPopup();
-    };
-
-    map.on('dblclick', moverDblClickHandler);
-  };
-}
-  moverBtn.onclick = function() {
-    marker.closePopup();
-    moverBtn.disabled = true;
-    moverBtn.classList.add('blink');
-    moverBtn.textContent = "Haz doble click en el mapa...";
-
-    // Oculta el marcador original
-    marker.setOpacity(0);
-
-    // Guarda la posición anterior del punto
-    const oldLatLng = marker.getLatLng();
-
-    // Crea un marcador temporal que sigue el mouse
-    let tempMarker = L.marker(oldLatLng, {
-      icon: marker.options.icon,
-      opacity: 1
-    }).addTo(map);
-    tempMarker._icon.classList.add('blink');
-
-    // Handler para mover el marcador temporal con el mouse
-    function mouseMoveHandler(e) {
-      tempMarker.setLatLng(e.latlng);
-    }
-    map.on('mousemove', mouseMoveHandler);
-
-    // Handler para doble click
-    moverDblClickHandler = function(ev) {
-      // Nueva posición
-      const newLatLng = ev.latlng;
-
-      // Mueve el marcador original
-      marker.setLatLng(newLatLng);
-      punto.latlng = newLatLng;
-      saveMarkers();
-
-      // Actualiza TODAS las líneas conectadas a este punto
-      drawnLines.forEach(line => {
-        let changed = false;
-        line.latlngs = line.latlngs.map(ll => {
-          // Si el vértice coincide con la posición anterior del punto, lo actualiza
-          if (
-            Math.abs(ll.lat - oldLatLng.lat) < 1e-6 &&
-            Math.abs(ll.lng - oldLatLng.lng) < 1e-6
-          ) {
-            changed = true;
-            return newLatLng;
-          }
-          return ll;
-        });
-        if (changed) {
-          line.polyline.setLatLngs(line.latlngs);
-          saveLines();
-        }
-      });
-
-      // Limpia todo
-      map.off('mousemove', mouseMoveHandler);
-      map.off('dblclick', moverDblClickHandler);
-      map.removeLayer(tempMarker);
-      marker.setOpacity(1);
-      moverBtn.disabled = false;
-      moverBtn.classList.remove('blink');
-      moverBtn.textContent = "🔀 Mover";
-      marker.openPopup();
-    };
-
-    map.on('dblclick', moverDblClickHandler);
-  };
-}
-);
-
-function abrirModal(punto) {
-  const modal = document.getElementById('miModal');
-  modal.style.display = 'flex';
-  const iframe = document.getElementById('modalIframe');
-  const pointId = encodeURIComponent(punto.name + "_" + punto.marker.getLatLng().lat + "_" + punto.marker.getLatLng().lng);
-  iframe.src = "modal.html?pointId=" + pointId;
-
-  // Botón cerrar
-  const closeModal = document.getElementById('closeModal');
-  closeModal.onclick = function() {
-    modal.style.display = 'none';
-    iframe.src = "";
-  };
-
-  // Solo asigna el evento una vez
-  if (!modal._outsideClickAssigned) {
-    window.addEventListener('click', function(event) {
-      if (event.target == modal) {
-        modal.style.display = 'none';
-        iframe.src = "";
-      }
+      // Cerrar el popup
+      map.closePopup();
     });
-    modal._outsideClickAssigned = true;
-  }
-}
-
-
+  };
+});
 
   function drawPoint(e) {
     if (!drawing || !currentLine) return;
@@ -1382,7 +1232,7 @@ function loadMarkers() {
       iconAnchor: [16, 32],
       popupAnchor: [0, -30]
     });
-    const marker = L.marker(p.latlng, { icon });
+    const marker = L.marker(p.latlng, { icon, draggable: true });
 
     // Agregar al cluster correcto
     if (p.tipo === "Caja") {
@@ -1397,6 +1247,30 @@ function loadMarkers() {
     marker.bindTooltip(p.name, { direction: 'top', offset: [0, -10], sticky: true });
     marker.bindPopup(crearPopupPunto(punto));
 
+    // Evento para mover el marcador y actualizar líneas conectadas
+    marker.on('drag', function(e) {
+      const newLatLng = e.target.getLatLng();
+      punto.latlng = newLatLng;
+      drawnLines.forEach(line => {
+        let changed = false;
+        line.latlngs = line.latlngs.map(ll => {
+          if (
+            Math.abs(ll.lat - e.oldLatLng.lat) < 1e-6 &&
+            Math.abs(ll.lng - e.oldLatLng.lng) < 1e-6
+          ) {
+            changed = true;
+            return newLatLng;
+          }
+          return ll;
+        });
+        if (changed) {
+          line.polyline.setLatLngs(line.latlngs);
+          saveLines();
+        }
+      });
+      saveMarkers();
+    });
+
     marker.on('click', (e) => {
       marker.openPopup();
       if (cableDibujando && cableLinea) {
@@ -1407,7 +1281,6 @@ function loadMarkers() {
           cableLinea.addLatLng(latlng);
           actualizarPopupCable();
           if (respuesta === 'finalizar') {
-            // Aquí debes finalizar el dibujo
             confirmarAgregarCable();
           }
         });
@@ -1829,6 +1702,60 @@ function saveLines() {
 document.getElementById('logoutBtn').onclick = function() {
   window.location.href = 'index.html';
 };
+
+function mostrarPopupEliminar(callback) {
+  const popup = document.getElementById('confirmarConexionPopup');
+  popup.style.display = 'block';
+  popup.querySelector('p').textContent = "¿Desea eliminar el punto?";
+  document.getElementById('btnConectar').textContent = "✅ Eliminar";
+  document.getElementById('btnConectarFinalizar').style.display = "none";
+  document.getElementById('btnCancelarConexion').textContent = "❌ Cancelar";
+
+  // Limpiar listeners previos
+  document.getElementById('btnConectar').onclick = () => {
+    popup.style.display = 'none';
+    // Restaurar texto y botones
+    popup.querySelector('p').textContent = "¿Deseas conectar este punto?";
+    document.getElementById('btnConectar').textContent = "✅ Conectar";
+    document.getElementById('btnConectarFinalizar').style.display = "";
+    document.getElementById('btnCancelarConexion').textContent = "❌ Cancelar";
+    callback();
+  };
+  document.getElementById('btnCancelarConexion').onclick = () => {
+    popup.style.display = 'none';
+    // Restaurar texto y botones
+    popup.querySelector('p').textContent = "¿Deseas conectar este punto?";
+    document.getElementById('btnConectar').textContent = "✅ Conectar";
+    document.getElementById('btnConectarFinalizar').style.display = "";
+    document.getElementById('btnCancelarConexion').textContent = "❌ Cancelar";
+  };
+}
+
+function abrirModal(punto) {
+  const modal = document.getElementById('miModal');
+  modal.style.display = 'flex';
+  const iframe = document.getElementById('modalIframe');
+  const pointId = encodeURIComponent(punto.name + "_" + punto.marker.getLatLng().lat + "_" + punto.marker.getLatLng().lng);
+  iframe.src = "modal.html?pointId=" + pointId;
+
+  // Botón cerrar
+  const closeModal = document.getElementById('closeModal');
+  closeModal.onclick = function() {
+    modal.style.display = 'none';
+    iframe.src = "";
+  };
+
+  // Solo asigna el evento una vez
+  if (!modal._outsideClickAssigned) {
+    window.addEventListener('click', function(event) {
+      if (event.target == modal) {
+        modal.style.display = 'none';
+        iframe.src = "";
+      }
+    });
+    modal._outsideClickAssigned = true;
+  }
+}
 </script> 
 
 <div id="confirmarConexionPopup" style="display:none; position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%);

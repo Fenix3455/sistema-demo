@@ -371,11 +371,12 @@
     }
 
     function getCentro(el) {
+      // Usar canvas-area como referencia para obtener la posición relativa real
       const rect = el.getBoundingClientRect();
-      const svgRect = document.getElementById("conexiones").getBoundingClientRect();
+      const areaRect = document.getElementById("canvas-area").getBoundingClientRect();
       return {
-        x: rect.left - svgRect.left + rect.width / 2,
-        y: rect.top - svgRect.top + rect.height / 2
+        x: rect.left - areaRect.left + rect.width / 2,
+        y: rect.top - areaRect.top + rect.height / 2
       };
     }
 
@@ -828,8 +829,8 @@ function saveModalStateForPoint(pointId) {
     bloques.push({
       id: b.id,
       html: b.outerHTML,
-      top: b.style.top,    // <-- Guarda la posición
-      left: b.style.left   // <-- Guarda la posición
+      top: b.style.top || '150px',
+      left: b.style.left || '50px'
     });
   });
   const conexionesData = conexiones.map(c => ({
@@ -849,9 +850,10 @@ function loadModalStateForPoint(pointId) {
   data.bloques.forEach(b => {
     const temp = document.createElement('div');
     temp.innerHTML = b.html;
+    // ...dentro de loadModalStateForPoint...
     const bloque = temp.firstChild;
-    if (b.top) bloque.style.top = b.top;
-    if (b.left) bloque.style.left = b.left;
+    bloque.style.top = (b.top && b.top !== "") ? b.top : '150px';
+    bloque.style.left = (b.left && b.left !== "") ? b.left : '50px';
     document.getElementById('canvas-area').appendChild(bloque);
 
     const moverBtn = bloque.querySelector(`[id^="mover"]`);
